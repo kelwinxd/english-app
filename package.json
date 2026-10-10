@@ -1,0 +1,20 @@
+{
+  "name": "englishapp",
+  "version": "0.0.0",
+  "private": true,
+  "description": "App de inglês (MVP): lições CEFR-J, jogo do balão e conversa por áudio.",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev -w @englishapp/api",
+    "dev:web": "npm run dev -w @englishapp/web",
+    "dev:worker": "npm run dev -w @englishapp/worker",
+    "build": "npm run build --workspaces --if-present",
+    "prisma:generate": "npm run prisma:generate -w @englishapp/api",
+    "prisma:migrate": "npm run prisma:migrate -w @englishapp/api"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

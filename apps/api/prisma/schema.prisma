@@ -1,0 +1,28 @@
+// Schema do Prisma — ver ordem de criação em PLANEJAMENTO.md (seção 5).
+//
+// Fase 0: apenas datasource + generator + um model trivial (AppSetting) para
+//         validar a primeira migration.
+// Fase 1: tabelas do better-auth (user/session/account/verification) + Profile.
+// Fase 3+: grammar_topic, grammar_lesson, grammar_question, user_topic_progress,
+//          user_error, game_run, character, conversation, message, correction.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [unaccent, pg_trgm]
+}
+
+/// Chave-valor simples só para firmar a primeira migration da Fase 0.
+/// Pode ser removida quando os models reais entrarem.
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("app_setting")
+}
