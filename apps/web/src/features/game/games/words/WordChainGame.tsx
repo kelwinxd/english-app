@@ -34,7 +34,7 @@ export function WordChainGame({ onFinish, onExit }: GameComponentProps) {
   const tickRef = useRef<number | null>(null);
   const wordsRef = useRef<string[]>([]);
   wordsRef.current = words;
-  const inputRef = useRef(null)
+  const inputRef = useRef<HTMLInputElement>(null);
 
   function clearTick() {
     if (tickRef.current !== null) {
