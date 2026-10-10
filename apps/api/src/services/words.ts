@@ -63,3 +63,52 @@ export async function checkWord(
     related: Boolean(parsed.related),
   };
 }
+
+
+/**
+ * Jogo de encadear palavras: valida uma palavra digitada,
+ * sem precisar transcrever áudio.
+ */
+export async function checkTextWord(
+  text: string,
+  theme: string,
+): Promise<WordCheck> {
+  const api = getOpenAI();
+  const spoken = text.trim();
+
+  const completion = await api.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [
+      {
+        role: 'system',
+        content:
+          'You judge a word-association game. The player provides one English word. ' +
+          'Decide if it is clearly related to the given theme. ' +
+          'Return "normalized": the main English word in lowercase (single word, no punctuation). ' +
+          'If the input is not a valid single English word, return an empty normalized string and related false.',
+      },
+      {
+        role: 'user',
+        content: `Theme: "${theme}". The player entered: "${spoken}". Is it related?`,
+      },
+    ],
+    response_format: {
+      type: 'json_schema',
+      json_schema: WORD_SCHEMA,
+    },
+    temperature: 0,
+  });
+
+  const parsed = JSON.parse(
+    completion.choices[0]?.message?.content ?? '{}',
+  ) as {
+    normalized?: string;
+    related?: boolean;
+  };
+
+  return {
+    word: (parsed.normalized || '').toLowerCase().trim(),
+    related: Boolean(parsed.related),
+  };
+}
+

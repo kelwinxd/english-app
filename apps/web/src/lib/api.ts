@@ -63,6 +63,32 @@ export async function apiPostFormStream<E>(
   flushLines(true);
 }
 
+
+export async function apiPost<T>(
+  path: string,
+  body: unknown,
+): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+    credentials: 'include',
+  });
+
+  const data = (await res.json().catch(() => ({}))) as T & {
+    error?: string;
+  };
+
+  if (!res.ok) {
+    throw new Error(data.error || `POST ${path} -> ${res.status}`);
+  }
+
+  return data as T;
+}
+
+
 export type HealthResponse = {
   status: string;
   uptime: number;

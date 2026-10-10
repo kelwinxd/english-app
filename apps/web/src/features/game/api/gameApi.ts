@@ -1,4 +1,4 @@
-import { apiGet, apiPostForm } from '@/lib/api';
+import { apiGet, apiPost, apiPostForm } from '@/lib/api';
 import type { Challenge, Level } from '../types';
 
 type ChallengesResponse = { level: Level; challenges: Challenge[] };
@@ -17,3 +17,13 @@ export function checkWord(params: { audio: Blob; theme: string }): Promise<WordC
   form.append('theme', params.theme);
   return apiPostForm<WordCheck>('/game/word-check', form);
 }
+
+
+export function checkTextWord(params: {
+  text: string;
+  theme: string;
+}): Promise<WordCheck> {
+  return apiPost<WordCheck>('/game/word-check-text', params);
+}
+
+

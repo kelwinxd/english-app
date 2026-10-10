@@ -3,7 +3,7 @@ import multer from 'multer';
 import { z } from 'zod';
 import { openaiReady } from '../services/openaiClient.js';
 import { generateChallenges } from '../services/challenges.js';
-import { checkWord } from '../services/words.js';
+import { checkWord, checkTextWord } from '../services/words.js';
 
 export const gameRouter = Router();
 
@@ -56,6 +56,43 @@ gameRouter.post('/word-check', upload.single('audio'), async (req, res) => {
     console.error('[game] erro no word-check:', err);
     return res.status(502).json({
       error: 'Falha ao processar a palavra.',
+      detail: err instanceof Error ? err.message : String(err),
+    });
+  }
+});
+
+const textWordSchema = z.object({
+  text: z.string().trim().min(1).max(80),
+  theme: z.string().trim().min(1).max(100),
+});
+
+gameRouter.post('/word-check-text', async (req, res) => {
+  if (!openaiReady()) {
+    return res.status(503).json({
+      error: 'OPENAI_API_KEY não configurada no servidor.',
+    });
+  }
+
+  const parsed = textWordSchema.safeParse(req.body);
+
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: 'Texto ou tema inválido.',
+    });
+  }
+
+  try {
+    const result = await checkTextWord(
+      parsed.data.text,
+      parsed.data.theme,
+    );
+
+    return res.json(result);
+  } catch (err) {
+    console.error('[game] erro no word-check-text:', err);
+
+    return res.status(502).json({
+      error: 'Falha ao validar a palavra.',
       detail: err instanceof Error ? err.message : String(err),
     });
   }
