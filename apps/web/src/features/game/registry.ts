@@ -1,6 +1,7 @@
-import { Sparkles, Target } from 'lucide-react';
+import { Image, Sparkles, Target } from 'lucide-react';
 import { BalloonGame } from './games/balloon/BalloonGame';
 import { WordChainGame } from './games/words/WordChainGame';
+import { ImageGame } from './games/images/ImageGame';
 import type { GameDefinition } from './types';
 
 /**
@@ -23,5 +24,12 @@ export const GAMES: GameDefinition[] = [
     description: 'Fale palavras do tema a cada 5s, sem repetir. O gênio espera.',
     Icon: Sparkles,
     Component: WordChainGame,
+  },
+  {
+    id: 'image-name',
+    name: 'Imagem → palavra',
+    description: 'O gênio mostra uma imagem; escreva o objeto ou a ação em inglês em 5s.',
+    Icon: Image,
+    Component: ImageGame,
   },
 ];

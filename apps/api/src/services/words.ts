@@ -18,9 +18,8 @@ const WORD_SCHEMA = {
 } as const;
 
 /**
- * Jogo de encadear palavras: transcreve a palavra falada (Whisper) e decide,
- * via LLM, se ela é claramente relacionada ao tema. `normalized` é a palavra
- * em minúsculas (um termo só) para a checagem de repetição no front.
+ * Jogo de encadear palavras (por ÁUDIO): transcreve a palavra falada (Whisper)
+ * e decide, via LLM, se ela é relacionada ao tema.
  */
 export async function checkWord(
   audio: Buffer,
@@ -28,14 +27,21 @@ export async function checkWord(
   theme: string,
 ): Promise<WordCheck> {
   const api = getOpenAI();
-
   const file = await toFile(audio, 'word.webm', { type: mimeType });
   const stt = await api.audio.transcriptions.create({
     model: 'whisper-1',
     file,
     language: 'en',
   });
-  const spoken = stt.text.trim();
+  return judgeWord(stt.text.trim(), theme);
+}
+
+/**
+ * Decide via LLM se `spoken` é claramente relacionada ao tema. `normalized` é a
+ * palavra em minúsculas (um termo só) para a checagem de repetição no front.
+ */
+async function judgeWord(spoken: string, theme: string): Promise<WordCheck> {
+  const api = getOpenAI();
 
   const completion = await api.chat.completions.create({
     model: 'gpt-4o-mini',

@@ -17,9 +17,23 @@ const THEMES = [
 ];
 
 type Phase = 'intro' | 'waiting' | 'recording' | 'checking';
+type Theme = (typeof THEMES)[number];
+
+// Níveis de dificuldade do jogo.
+type Difficulty = 'normal' | 'surprise' | 'shift';
+const DIFFICULTIES: { id: Difficulty; label: string; hint: string }[] = [
+  { id: 'normal', label: 'Normal', hint: 'Você escolhe e vê o tema o tempo todo.' },
+  { id: 'surprise', label: 'Surpresa', hint: 'O gênio sorteia — você só descobre o tema ao começar.' },
+  { id: 'shift', label: 'Camaleão', hint: 'Tema sorteado e o gênio troca no meio (cada tema dura ao menos 2 palavras).' },
+];
 
 function randomTheme() {
   return THEMES[Math.floor(Math.random() * THEMES.length)];
+}
+
+function pickDifferentTheme(current: Theme) {
+  const options = THEMES.filter((t) => t.en !== current.en);
+  return options[Math.floor(Math.random() * options.length)];
 }
 
 export function WordChainGame({ onFinish, onExit }: GameComponentProps) {
@@ -29,12 +43,19 @@ export function WordChainGame({ onFinish, onExit }: GameComponentProps) {
   const [remaining, setRemaining] = useState(ROUND_MS);
   const [note, setNote] = useState<string | null>(null);
   const [typedWord, setTypedWord] = useState('');
+  const [difficulty, setDifficulty] = useState<Difficulty>('normal');
 
   const recorder = useRecorder();
   const tickRef = useRef<number | null>(null);
   const wordsRef = useRef<string[]>([]);
   wordsRef.current = words;
+  const themeRef = useRef(theme);
+  themeRef.current = theme;
+  const themeWordsRef = useRef(0); // palavras ditas no tema atual (modo camaleão)
+  const nextSwitchRef = useRef(2); // troca o tema ao atingir este nº (>= 2)
   const inputRef = useRef<HTMLInputElement>(null);
+  // Último modo usado: evita reabrir o teclado sozinho depois de usar a voz.
+  const lastModeRef = useRef<'text' | 'voice' | null>(null);
 
   function clearTick() {
     if (tickRef.current !== null) {
@@ -74,6 +95,13 @@ export function WordChainGame({ onFinish, onExit }: GameComponentProps) {
   }
 
   function start() {
+    lastModeRef.current = null;
+    // Surpresa/Camaleão: o gênio sorteia o tema só agora.
+    if (difficulty !== 'normal') {
+      setTheme(randomTheme());
+    }
+    themeWordsRef.current = 0;
+    nextSwitchRef.current = 2 + Math.floor(Math.random() * 2); // 2 ou 3
     setWords([]);
     setTypedWord('');
     setNote(null);
@@ -101,16 +129,32 @@ export function WordChainGame({ onFinish, onExit }: GameComponentProps) {
     }
 
     if (!result.related) {
-      resume(`"${word}" não parece do tema. Tente outra.`);
+      gameOver(`"${word}" não é do tema`);
       return;
     }
 
     setWords((current) => [...current, word]);
+
+    // Modo camaleão: troca o tema depois de ao menos 2 palavras no tema atual.
+    if (difficulty === 'shift') {
+      themeWordsRef.current += 1;
+      if (themeWordsRef.current >= nextSwitchRef.current) {
+        const next = pickDifferentTheme(themeRef.current);
+        setTheme(next);
+        themeWordsRef.current = 0;
+        nextSwitchRef.current = 2 + Math.floor(Math.random() * 2);
+        resume(`Boa! +1: ${word} · 🧞 novo tema: ${next.label}!`);
+        return;
+      }
+    }
+
     resume(`Boa! +1: ${word}`);
   }
 
   async function toggleRecord() {
     if (phase === 'waiting') {
+      lastModeRef.current = 'voice';
+      inputRef.current?.blur(); // fecha o teclado no mobile ao gravar
       setNote(null);
       setPhase('recording');
       recorder.start();
@@ -145,6 +189,7 @@ export function WordChainGame({ onFinish, onExit }: GameComponentProps) {
 
     if (!text || phase !== 'waiting') return;
 
+    lastModeRef.current = 'text';
     clearTick();
     setPhase('checking');
     setNote(null);
@@ -174,28 +219,61 @@ export function WordChainGame({ onFinish, onExit }: GameComponentProps) {
     return () => clearTick();
   }, []);
 
-useEffect(() => {
-  if (phase === 'waiting') {
-    inputRef.current?.focus();
-  }
-}, [phase]);
+  useEffect(() => {
+    // Só devolve o foco (reabre o teclado) se o jogador NÃO acabou de usar a voz.
+    if (phase === 'waiting' && lastModeRef.current !== 'voice') {
+      inputRef.current?.focus();
+    }
+  }, [phase]);
 
   // ---------- Intro ----------
   if (phase === 'intro') {
+    const hideTheme = difficulty !== 'normal';
     return (
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center text-center">
         <Genie />
 
-        <p className="mt-3 text-sm text-muted-foreground">
-          O gênio escolheu um tema:
+        {hideTheme ? (
+          <>
+            <p className="mt-3 text-sm text-muted-foreground">O gênio vai sortear o tema…</p>
+            <p className="mb-1 text-2xl font-bold">🎲 ?</p>
+          </>
+        ) : (
+          <>
+            <p className="mt-3 text-sm text-muted-foreground">O gênio escolheu um tema:</p>
+            <p className="mb-1 text-2xl font-bold">{theme.label}</p>
+          </>
+        )}
+
+        <p className="mb-5 max-w-xs text-sm text-muted-foreground">
+          Fale ou digite uma palavra em inglês do tema a cada 5s. Acaba se você
+          repetir, fugir do tema ou o tempo zerar.
         </p>
 
-        <p className="mb-1 text-2xl font-bold">{theme.label}</p>
-
-        <p className="mb-6 max-w-xs text-sm text-muted-foreground">
-          Fale ou digite uma palavra em inglês do tema. Não pode repetir.
-          O tempo é pausado durante a validação.
-        </p>
+        {/* Seletor de dificuldade */}
+        <div className="mb-5 flex flex-col items-center gap-2">
+          <span className="text-xs font-medium text-muted-foreground">Dificuldade</span>
+          <div className="flex flex-wrap justify-center gap-2">
+            {DIFFICULTIES.map((d) => (
+              <button
+                key={d.id}
+                type="button"
+                onClick={() => setDifficulty(d.id)}
+                className={cn(
+                  'rounded-lg border px-3 py-1.5 text-sm transition-colors',
+                  difficulty === d.id
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'hover:bg-accent',
+                )}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+          <span className="max-w-xs text-xs text-muted-foreground">
+            {DIFFICULTIES.find((d) => d.id === difficulty)?.hint}
+          </span>
+        </div>
 
         <div className="flex gap-2">
           <button
@@ -206,13 +284,15 @@ useEffect(() => {
             Começar
           </button>
 
-          <button
-            type="button"
-            onClick={() => setTheme(randomTheme())}
-            className="rounded-lg border px-4 py-2 text-sm"
-          >
-            Trocar tema
-          </button>
+          {difficulty === 'normal' && (
+            <button
+              type="button"
+              onClick={() => setTheme(randomTheme())}
+              className="rounded-lg border px-4 py-2 text-sm"
+            >
+              Trocar tema
+            </button>
+          )}
         </div>
 
         <button
@@ -298,8 +378,13 @@ useEffect(() => {
         </p>
       )}
 
+      {/* Lembrete do tema — colado ao input, fica visível com o teclado aberto */}
+      <div className="border-t pt-2 text-center text-xs text-muted-foreground">
+        Tema: <span className="font-semibold text-foreground">{theme.label}</span>
+      </div>
+
       {/* Entrada por texto */}
-      <form onSubmit={submitTypedWord} className="flex gap-2 pt-3">
+      <form onSubmit={submitTypedWord} className="flex gap-2 pt-2">
         <input
           type="text"
           value={typedWord}
