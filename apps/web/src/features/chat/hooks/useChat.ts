@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRecorder } from '@/hooks/useRecorder';
-import { fetchCharacters, sendMessageStream } from '../api/chatApi';
-import type { Character, CharactersResponse, Correction, Entry, Stage } from '../types';
+import { fetchCharacters, sendMessageStream, sendMessageTextStream } from '../api/chatApi';
+import type { Character, ChatStreamEvent, CharactersResponse, Correction, Entry, Stage } from '../types';
 
 const GRAMMAR_KEY = 'englishapp:correctGrammar';
 
@@ -84,42 +84,62 @@ export function useChat() {
     setStage('idle');
   }
 
+  // Handler de streaming compartilhado por voz e texto.
+  function handleEvent(evt: ChatStreamEvent) {
+    switch (evt.type) {
+      case 'user':
+        setEntries((prev) => [...prev, { role: 'user', text: evt.userText, corrections: [] }]);
+        setStage('thinking');
+        break;
+      case 'reply':
+        fillLastUserCorrections(evt.corrections);
+        setEntries((prev) => [...prev, { role: 'ai', text: evt.replyText, audio: '' }]);
+        setStage('tts');
+        break;
+      case 'reply_audio':
+        fillLastAiAudio(evt.replyAudio);
+        new Audio(evt.replyAudio).play().catch(() => {});
+        setStage('idle');
+        break;
+      case 'turns':
+        setTurns({ used: evt.turnsUsed, max: evt.turnsMax });
+        break;
+      case 'error':
+        setError(evt.error);
+        break;
+    }
+  }
+
   async function stopAndSend() {
     if (!character) return;
     const blob = await recorder.stop();
     setError(null);
     setStage('stt');
-
     try {
       await sendMessageStream(
         { audio: blob, conversationId, characterId: character.id, correctGrammar },
-        (evt) => {
-          switch (evt.type) {
-            case 'user':
-              setEntries((prev) => [...prev, { role: 'user', text: evt.userText, corrections: [] }]);
-              setStage('thinking');
-              break;
-            case 'reply':
-              fillLastUserCorrections(evt.corrections);
-              setEntries((prev) => [...prev, { role: 'ai', text: evt.replyText, audio: '' }]);
-              setStage('tts');
-              break;
-            case 'reply_audio':
-              fillLastAiAudio(evt.replyAudio);
-              new Audio(evt.replyAudio).play().catch(() => {});
-              setStage('idle');
-              break;
-            case 'turns':
-              setTurns({ used: evt.turnsUsed, max: evt.turnsMax });
-              break;
-            case 'error':
-              setError(evt.error);
-              break;
-          }
-        },
+        handleEvent,
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Falha ao enviar o áudio.');
+    } finally {
+      setStage('idle');
+    }
+  }
+
+  async function sendText(text: string) {
+    if (!character) return;
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    setError(null);
+    setStage('thinking');
+    try {
+      await sendMessageTextStream(
+        { text: trimmed, conversationId, characterId: character.id, correctGrammar },
+        handleEvent,
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Falha ao enviar a mensagem.');
     } finally {
       setStage('idle');
     }
@@ -148,5 +168,6 @@ export function useChat() {
     startRecording: recorder.start,
     stopAndSend,
     cancelRecording,
+    sendText,
   };
 }

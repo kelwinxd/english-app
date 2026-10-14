@@ -14,8 +14,7 @@ export function MessageList({ entries, stage }: { entries: Entry[]; stage: Stage
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
       {entries.length === 0 && stage === 'idle' && (
         <p className="mt-10 text-center text-sm text-muted-foreground">
-          Toque no microfone e fale em inglês. No fim de cada fala você recebe a resposta em áudio
-          e as correções.
+          Escreva ou fale em inglês. Você recebe a resposta em áudio e as correções.
         </p>
       )}
 

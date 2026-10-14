@@ -1,4 +1,4 @@
-import { apiGet, apiPostFormStream } from '@/lib/api';
+import { apiGet, apiPostFormStream, apiPostJsonStream } from '@/lib/api';
 import type { CharactersResponse, ChatStreamEvent } from '../types';
 
 // Única porta de entrada para a API do chat. As pages não chamam fetch;
@@ -24,4 +24,17 @@ export function sendMessageStream(
   form.append('characterId', params.characterId);
   form.append('correctGrammar', String(params.correctGrammar));
   return apiPostFormStream<ChatStreamEvent>('/chat/message', form, onEvent);
+}
+
+/** Envia uma mensagem de TEXTO e recebe a resposta em streaming. */
+export function sendMessageTextStream(
+  params: {
+    text: string;
+    conversationId: string;
+    characterId: string;
+    correctGrammar: boolean;
+  },
+  onEvent: (event: ChatStreamEvent) => void,
+): Promise<void> {
+  return apiPostJsonStream<ChatStreamEvent>('/chat/message-text', params, onEvent);
 }

@@ -20,6 +20,7 @@ export function Conversar() {
     startRecording,
     stopAndSend,
     cancelRecording,
+    sendText,
   } = useChat();
 
   return (
@@ -47,6 +48,7 @@ export function Conversar() {
           onStart={startRecording}
           onStop={stopAndSend}
           onCancel={cancelRecording}
+          onSend={sendText}
         />
       )}
     </main>

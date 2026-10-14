@@ -24,6 +24,7 @@ export function ChatWindow(props: {
   onStart: () => void;
   onStop: () => void;
   onCancel: () => void;
+  onSend: (text: string) => void;
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border bg-background">
@@ -49,6 +50,7 @@ export function ChatWindow(props: {
           onStart={props.onStart}
           onStop={props.onStop}
           onCancel={props.onCancel}
+          onSend={props.onSend}
         />
       </div>
     </div>

@@ -66,18 +66,20 @@ const RESPONSE_SCHEMA = {
   },
 } as const;
 
-export async function processTurn(params: {
-  audio: Buffer;
-  mimeType: string;
+type TurnParams = {
   character: Character;
   history: ChatMessage[];
-  // Callbacks por etapa: permitem ao chamador (a rota) emitir eventos de
-  // streaming conforme cada parte do pipeline fica pronta.
   // Quando false, o personagem só conversa — sem corrigir gramática.
   correctGrammar?: boolean;
+  // Callbacks por etapa: a rota emite eventos de streaming conforme cada parte fica pronta.
   onUserText?: (userText: string) => void | Promise<void>;
   onReply?: (replyText: string, corrections: Correction[]) => void | Promise<void>;
-}): Promise<TurnResult> {
+};
+
+/** Troca por ÁUDIO: transcreve (Whisper) e segue o pipeline. */
+export async function processTurn(
+  params: TurnParams & { audio: Buffer; mimeType: string },
+): Promise<TurnResult> {
   const api = getOpenAI();
 
   // 1. STT — Whisper. language 'en' porque o alvo é prática de inglês.
@@ -92,7 +94,22 @@ export async function processTurn(params: {
   const userText = stt.text.trim();
   await params.onUserText?.(userText);
 
-  // 2. LLM — resposta do personagem + correções (JSON estrito).
+  return respond(userText, params);
+}
+
+/** Troca por TEXTO: usa a mensagem digitada direto (sem Whisper). */
+export async function processTextTurn(
+  params: TurnParams & { text: string },
+): Promise<TurnResult> {
+  const userText = params.text.trim();
+  await params.onUserText?.(userText);
+  return respond(userText, params);
+}
+
+/** LLM (resposta + correções) + TTS. Compartilhado por áudio e texto. */
+async function respond(userText: string, params: TurnParams): Promise<TurnResult> {
+  const api = getOpenAI();
+
   const correctGrammar = params.correctGrammar ?? true;
   const systemPrompt = correctGrammar
     ? `${params.character.persona}\n\n` +
@@ -121,7 +138,7 @@ export async function processTurn(params: {
   const corrections = correctGrammar ? parsed.corrections ?? [] : [];
   await params.onReply?.(replyText, corrections);
 
-  // 3. TTS — OpenAI tts-1 (protótipo; ElevenLabs entra na produtização).
+  // TTS — OpenAI tts-1 (protótipo; ElevenLabs entra na produtização).
   const speech = await api.audio.speech.create({
     model: 'tts-1',
     voice: params.character.voice,

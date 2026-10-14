@@ -19,22 +19,8 @@ export async function apiPostForm<T>(path: string, form: FormData): Promise<T> {
   return data as T;
 }
 
-/**
- * POST multipart cuja resposta é NDJSON (um JSON por linha). Chama `onEvent`
- * para cada evento conforme ele chega. Em erro HTTP (ex.: 429), tenta ler o
- * JSON de erro e lança.
- */
-export async function apiPostFormStream<E>(
-  path: string,
-  form: FormData,
-  onEvent: (event: E) => void,
-): Promise<void> {
-  const res = await fetch(`${BASE}${path}`, {
-    method: 'POST',
-    body: form,
-    credentials: 'include',
-  });
-
+// Lê uma resposta NDJSON (um JSON por linha) chamando `onEvent` por evento.
+async function consumeNdjson<E>(res: Response, path: string, onEvent: (event: E) => void) {
   if (!res.ok || !res.body) {
     const data = (await res.json().catch(() => ({}))) as { error?: string };
     throw new Error(data.error || `POST ${path} -> ${res.status}`);
@@ -61,6 +47,31 @@ export async function apiPostFormStream<E>(
     flushLines();
   }
   flushLines(true);
+}
+
+/** POST multipart cuja resposta é NDJSON. Chama `onEvent` por evento. */
+export async function apiPostFormStream<E>(
+  path: string,
+  form: FormData,
+  onEvent: (event: E) => void,
+): Promise<void> {
+  const res = await fetch(`${BASE}${path}`, { method: 'POST', body: form, credentials: 'include' });
+  return consumeNdjson(res, path, onEvent);
+}
+
+/** POST JSON cuja resposta é NDJSON. Chama `onEvent` por evento. */
+export async function apiPostJsonStream<E>(
+  path: string,
+  body: unknown,
+  onEvent: (event: E) => void,
+): Promise<void> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    credentials: 'include',
+  });
+  return consumeNdjson(res, path, onEvent);
 }
 
 
