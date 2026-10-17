@@ -28,11 +28,15 @@ export type GameComponentProps = {
   onExit: () => void;
 };
 
+/** Habilidade treinada pelo jogo (vira a tag no card). */
+export type Skill = 'Gramática' | 'Vocabulário' | 'Escuta' | 'Pronúncia';
+
 /** Registro de um jogo no hub. Adicionar jogo = adicionar um destes. */
 export type GameDefinition = {
   id: string;
   name: string;
   description: string;
+  skill: Skill;
   Icon: LucideIcon;
   Component: ComponentType<GameComponentProps>;
 };

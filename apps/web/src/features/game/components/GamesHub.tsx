@@ -1,9 +1,24 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { GAMES } from '../registry';
-import type { GameDefinition, Level } from '../types';
+import type { GameDefinition, Level, Skill } from '../types';
 
 const LEVELS: Level[] = ['A2', 'B1', 'B2'];
+
+const SKILL_STYLES: Record<Skill, string> = {
+  Gramática: 'bg-sky-500/15 text-sky-600 dark:text-sky-400',
+  Vocabulário: 'bg-violet-500/15 text-violet-600 dark:text-violet-400',
+  Escuta: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+  Pronúncia: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+};
+
+function SkillBadge({ skill }: { skill: Skill }) {
+  return (
+    <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-xs font-medium', SKILL_STYLES[skill])}>
+      {skill}
+    </span>
+  );
+}
 
 /** Lista os jogos do catálogo + seletor de nível. Agnóstico de qual jogo é. */
 export function GamesHub({ onPick }: { onPick: (game: GameDefinition, level: Level) => void }) {
@@ -46,8 +61,11 @@ export function GamesHub({ onPick }: { onPick: (game: GameDefinition, level: Lev
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <game.Icon className="h-6 w-6" />
             </span>
-            <span className="flex flex-col">
-              <span className="text-lg font-semibold">{game.name}</span>
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="flex items-center gap-2">
+                <span className="truncate text-lg font-semibold">{game.name}</span>
+                <SkillBadge skill={game.skill} />
+              </span>
               <span className="text-sm text-muted-foreground">{game.description}</span>
             </span>
           </button>

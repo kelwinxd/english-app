@@ -1,4 +1,10 @@
-export type Character = { id: string; name: string; blurb: string };
+export type Character = {
+  id: string;
+  name: string;
+  role: string;
+  blurb: string;
+  avatar: string;
+};
 
 export type CharactersResponse = {
   ready: boolean;

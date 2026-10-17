@@ -1,4 +1,5 @@
 import type { Character, CharactersResponse } from '../types';
+import { Avatar } from './Avatar';
 
 export function CharacterPicker({
   meta,
@@ -28,10 +29,15 @@ export function CharacterPicker({
             type="button"
             onClick={() => onSelect(c)}
             disabled={!meta.ready}
-            className="rounded-2xl border bg-card p-5 text-left transition-colors hover:border-primary hover:bg-accent disabled:opacity-50"
+            className="flex items-center gap-3 rounded-2xl border bg-card p-4 text-left transition-colors hover:border-primary hover:bg-accent disabled:opacity-50"
           >
-            <div className="text-lg font-semibold">{c.name}</div>
-            <div className="text-sm text-muted-foreground">{c.blurb}</div>
+            <Avatar src={c.avatar} name={c.name} size={52} />
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate font-semibold">
+                {c.name} <span className="font-normal text-muted-foreground">— {c.role}</span>
+              </span>
+              <span className="truncate text-sm text-muted-foreground">{c.blurb}</span>
+            </span>
           </button>
         ))}
       </div>

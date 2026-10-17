@@ -9,14 +9,18 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'English App',
-        short_name: 'English',
-        description: 'Aprenda inglês: lições CEFR-J, jogo e conversa por áudio.',
-        theme_color: '#0ea5e9',
+        name: 'Bikuda',
+        short_name: 'Bikuda',
+        description: 'Aprenda inglês: lições CEFR-J, jogos e conversa por áudio.',
+        theme_color: '#1e40af',
         background_color: '#ffffff',
         display: 'standalone',
         start_url: '/',
-        icons: [],
+        icons: [
+          { src: '/logo.png', sizes: '192x192', type: 'image/png' },
+          { src: '/logo.png', sizes: '512x512', type: 'image/png' },
+          { src: '/logo.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+        ],
       },
     }),
   ],

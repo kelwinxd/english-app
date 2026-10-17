@@ -1,28 +1,40 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
-import { TOPICS, TopicList, Lesson, Quiz, getProgress, saveBest, type Topic } from '@/features/learn';
+import { ArrowLeft, BookOpen, ListChecks } from 'lucide-react';
+import {
+  TOPICS,
+  TopicList,
+  Lesson,
+  Quiz,
+  getProgress,
+  saveBest,
+  getLearned,
+  setLearned,
+  type Topic,
+} from '@/features/learn';
 
-type Phase = 'list' | 'lesson' | 'quiz' | 'result';
+type View = 'home' | 'lessonList' | 'lesson' | 'quizList' | 'quiz' | 'result';
 
 export function Aprender() {
-  const [phase, setPhase] = useState<Phase>('list');
+  const [view, setView] = useState<View>('home');
   const [topic, setTopic] = useState<Topic | null>(null);
-  const [progress, setProgress] = useState(getProgress);
+  const [scores, setScores] = useState(getProgress);
+  const [learned, setLearnedState] = useState<string[]>(getLearned);
   const [result, setResult] = useState(0);
 
-  function openTopic(t: Topic) {
-    setTopic(t);
-    setPhase('lesson');
+  const learnedCount = TOPICS.filter((t) => learned.includes(t.id)).length;
+
+  function toggleLearned(id: string) {
+    setLearnedState(setLearned(id, !learned.includes(id)));
   }
 
   function finishQuiz(correct: number) {
     if (topic) {
       saveBest(topic.id, correct);
-      setProgress(getProgress());
+      setScores(getProgress());
     }
     setResult(correct);
-    setPhase('result');
+    setView('result');
   }
 
   return (
@@ -34,17 +46,94 @@ export function Aprender() {
         <ArrowLeft className="h-4 w-4" /> Início
       </Link>
 
-      {phase === 'list' && <TopicList topics={TOPICS} progress={progress} onSelect={openTopic} />}
-
-      {phase === 'lesson' && topic && (
-        <Lesson topic={topic} onStart={() => setPhase('quiz')} onBack={() => setPhase('list')} />
+      {/* Hub: Lição x Testes */}
+      {view === 'home' && (
+        <div className="flex min-h-0 flex-1 flex-col">
+          <h1 className="mb-1 text-2xl font-bold">Aprender</h1>
+          <p className="mb-5 text-sm text-muted-foreground">
+            Leia a teoria e teste o que aprendeu — cada parte no seu tempo.
+          </p>
+          <div className="flex flex-col gap-3">
+            <button
+              type="button"
+              onClick={() => setView('lessonList')}
+              className="flex items-center gap-4 rounded-2xl border bg-card p-5 text-left transition-colors hover:border-primary hover:bg-accent"
+            >
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <BookOpen className="h-6 w-6" />
+              </span>
+              <span className="flex flex-col">
+                <span className="text-lg font-semibold">Lição</span>
+                <span className="text-sm text-muted-foreground">
+                  Teoria dos tópicos · {learnedCount}/{TOPICS.length} aprendidas
+                </span>
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setView('quizList')}
+              className="flex items-center gap-4 rounded-2xl border bg-card p-5 text-left transition-colors hover:border-primary hover:bg-accent"
+            >
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <ListChecks className="h-6 w-6" />
+              </span>
+              <span className="flex flex-col">
+                <span className="text-lg font-semibold">Testes</span>
+                <span className="text-sm text-muted-foreground">Quizzes de múltipla escolha</span>
+              </span>
+            </button>
+          </div>
+        </div>
       )}
 
-      {phase === 'quiz' && topic && (
-        <Quiz topic={topic} onFinish={finishQuiz} onExit={() => setPhase('list')} />
+      {/* Lista de lições */}
+      {view === 'lessonList' && (
+        <TopicList
+          title="Lições"
+          subtitle={`Aprendidas: ${learnedCount}/${TOPICS.length}`}
+          topics={TOPICS}
+          completed={(t) => learned.includes(t.id)}
+          onSelect={(t) => {
+            setTopic(t);
+            setView('lesson');
+          }}
+          onBack={() => setView('home')}
+        />
       )}
 
-      {phase === 'result' && topic && (
+      {/* Leitura de uma lição */}
+      {view === 'lesson' && topic && (
+        <Lesson
+          topic={topic}
+          learned={learned.includes(topic.id)}
+          onToggleLearned={() => toggleLearned(topic.id)}
+          onBack={() => setView('lessonList')}
+        />
+      )}
+
+      {/* Lista de testes */}
+      {view === 'quizList' && (
+        <TopicList
+          title="Testes"
+          subtitle="Responda os quizzes e acompanhe seu melhor resultado."
+          topics={TOPICS}
+          completed={(t) => scores[t.id] === t.questions.length}
+          badge={(t) => (scores[t.id] !== undefined ? `${scores[t.id]}/${t.questions.length}` : null)}
+          onSelect={(t) => {
+            setTopic(t);
+            setView('quiz');
+          }}
+          onBack={() => setView('home')}
+        />
+      )}
+
+      {/* Quiz */}
+      {view === 'quiz' && topic && (
+        <Quiz topic={topic} onFinish={finishQuiz} onExit={() => setView('quizList')} />
+      )}
+
+      {/* Resultado do quiz */}
+      {view === 'result' && topic && (
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center text-center">
           <p className="text-sm text-muted-foreground">Resultado — {topic.title}</p>
           <p className="my-1 text-5xl font-bold">
@@ -52,23 +141,23 @@ export function Aprender() {
           </p>
           <p className="mb-5 text-sm text-muted-foreground">
             {result === topic.questions.length
-              ? 'Perfeito! Tópico dominado 🎉'
-              : 'Bom trabalho — refaça para dominar.'}
+              ? 'Perfeito! 🎉'
+              : 'Bom trabalho — refaça para melhorar.'}
           </p>
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => setPhase('quiz')}
+              onClick={() => setView('quiz')}
               className="rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground"
             >
               Refazer
             </button>
             <button
               type="button"
-              onClick={() => setPhase('list')}
+              onClick={() => setView('quizList')}
               className="rounded-lg border px-4 py-2 text-sm"
             >
-              Tópicos
+              Testes
             </button>
           </div>
         </div>

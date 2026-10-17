@@ -241,7 +241,16 @@ export function WordChainGame({ onFinish, onExit }: GameComponentProps) {
         ) : (
           <>
             <p className="mt-3 text-sm text-muted-foreground">O gênio escolheu um tema:</p>
-            <p className="mb-1 text-2xl font-bold">{theme.label}</p>
+            <div className="mb-1 flex items-center gap-2">
+              <span className="text-2xl font-bold">{theme.label}</span>
+              <button
+                type="button"
+                onClick={() => setTheme(randomTheme())}
+                className="rounded-lg border px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent"
+              >
+                Trocar tema
+              </button>
+            </div>
           </>
         )}
 
@@ -249,6 +258,8 @@ export function WordChainGame({ onFinish, onExit }: GameComponentProps) {
           Fale ou digite uma palavra em inglês do tema a cada 5s. Acaba se você
           repetir, fugir do tema ou o tempo zerar.
         </p>
+
+        <div className="my-4 h-px w-full max-w-xs bg-border" />
 
         {/* Seletor de dificuldade */}
         <div className="mb-5 flex flex-col items-center gap-2">
@@ -275,33 +286,23 @@ export function WordChainGame({ onFinish, onExit }: GameComponentProps) {
           </span>
         </div>
 
-        <div className="flex gap-2">
+        <div className="mt-8 flex w-full max-w-xs gap-3">
+          <button
+            type="button"
+            onClick={onExit}
+            className="flex-1 rounded-lg bg-secondary px-5 py-2.5 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
+          >
+            Voltar
+          </button>
+
           <button
             type="button"
             onClick={start}
-            className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground"
+            className="flex-1 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground"
           >
             Começar
           </button>
-
-          {difficulty === 'normal' && (
-            <button
-              type="button"
-              onClick={() => setTheme(randomTheme())}
-              className="rounded-lg border px-4 py-2 text-sm"
-            >
-              Trocar tema
-            </button>
-          )}
         </div>
-
-        <button
-          type="button"
-          onClick={onExit}
-          className="mt-6 text-sm text-muted-foreground hover:text-foreground"
-        >
-          ← Jogos
-        </button>
       </div>
     );
   }

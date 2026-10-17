@@ -2,8 +2,10 @@
 // na produtização isso vira voz do ElevenLabs.
 export type Character = {
   id: string;
-  name: string;
-  blurb: string;
+  name: string; // nome curto, ex.: "Mia"
+  role: string; // papel, ex.: "Barista em NY"
+  blurb: string; // descrição/"status"
+  avatar: string; // URL da foto de perfil (placeholder por enquanto)
   voice: 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
   persona: string;
 };
@@ -11,8 +13,10 @@ export type Character = {
 export const CHARACTERS: Character[] = [
   {
     id: 'barista',
-    name: 'Mia, barista em NY',
+    name: 'Mia',
+    role: 'Barista em NY',
     blurb: 'Bate-papo casual numa cafeteria de Nova York.',
+    avatar: 'https://i.pravatar.cc/150?img=47',
     voice: 'nova',
     persona:
       'You are Mia, a warm, upbeat barista at a small coffee shop in New York City. ' +
@@ -21,8 +25,10 @@ export const CHARACTERS: Character[] = [
   },
   {
     id: 'interviewer',
-    name: 'Mr. Clarke, entrevistador',
+    name: 'Mr. Clarke',
+    role: 'Entrevistador',
     blurb: 'Simulação de entrevista de emprego, tom formal.',
+    avatar: 'https://i.pravatar.cc/150?img=68',
     voice: 'onyx',
     persona:
       'You are Mr. Clarke, a polite but professional job interviewer. You are conducting ' +
