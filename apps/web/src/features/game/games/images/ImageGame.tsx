@@ -12,7 +12,7 @@ import {
   type ImageMode,
 } from './data';
 
-const ROUND_MS = 5000;
+const TIME_OPTIONS = [5000, 10000]; // 5s ou 10s por imagem
 
 const MODES: { id: ImageMode; label: string; hint: string }[] = [
   { id: 'objects', label: 'Objetos', hint: 'Escreva o nome do objeto em inglês (ex.: sink).' },
@@ -33,7 +33,8 @@ export function ImageGame({ onFinish, onExit }: GameComponentProps) {
   const [queue, setQueue] = useState<ImageItem[]>([]);
   const [idx, setIdx] = useState(0);
   const [score, setScore] = useState(0);
-  const [remaining, setRemaining] = useState(ROUND_MS);
+  const [roundMs, setRoundMs] = useState(5000);
+  const [remaining, setRemaining] = useState(5000);
   const [typed, setTyped] = useState('');
   const [note, setNote] = useState<string | null>(null);
   const [imgLoaded, setImgLoaded] = useState(false);
@@ -41,6 +42,8 @@ export function ImageGame({ onFinish, onExit }: GameComponentProps) {
   const [hitsMap, setHitsMap] = useState<Record<string, number>>({});
 
   const tickRef = useRef<number | null>(null);
+  const roundMsRef = useRef(roundMs);
+  roundMsRef.current = roundMs;
   const scoreRef = useRef(0);
   scoreRef.current = score;
   const inputRef = useRef<HTMLInputElement>(null);
@@ -57,8 +60,9 @@ export function ImageGame({ onFinish, onExit }: GameComponentProps) {
 
   function startTimer() {
     clearTick();
-    const deadline = Date.now() + ROUND_MS;
-    setRemaining(ROUND_MS);
+    const ms = roundMsRef.current;
+    const deadline = Date.now() + ms;
+    setRemaining(ms);
     tickRef.current = window.setInterval(() => {
       const left = deadline - Date.now();
       if (left <= 0) {
@@ -145,7 +149,7 @@ export function ImageGame({ onFinish, onExit }: GameComponentProps) {
         </div>
         <p className="mt-3 mb-5 max-w-xs text-sm text-muted-foreground">
           O gênio mostra uma imagem do tema e você escreve, em inglês, o nome do que aparece — em
-          até 5s por imagem.
+          até {roundMs / 1000}s por imagem.
         </p>
 
         <div className="mb-4 flex flex-col items-center gap-2">
@@ -189,6 +193,25 @@ export function ImageGame({ onFinish, onExit }: GameComponentProps) {
           </div>
         </div>
 
+        <div className="mb-6 flex flex-col items-center gap-2">
+          <span className="text-xs font-medium text-muted-foreground">Tempo por imagem</span>
+          <div className="flex gap-2">
+            {TIME_OPTIONS.map((ms) => (
+              <button
+                key={ms}
+                type="button"
+                onClick={() => setRoundMs(ms)}
+                className={cn(
+                  'rounded-lg border px-4 py-1.5 text-sm transition-colors',
+                  roundMs === ms ? 'border-primary bg-primary text-primary-foreground' : 'hover:bg-accent',
+                )}
+              >
+                {ms / 1000}s
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="flex gap-2">
           <button
             type="button"
@@ -211,7 +234,7 @@ export function ImageGame({ onFinish, onExit }: GameComponentProps) {
   }
 
   // ---------- Jogando ----------
-  const pct = Math.max(0, Math.min(100, (remaining / ROUND_MS) * 100));
+  const pct = Math.max(0, Math.min(100, (remaining / roundMs) * 100));
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
