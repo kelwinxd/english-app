@@ -115,6 +115,8 @@ async function respond(userText: string, params: TurnParams): Promise<TurnResult
     ? `${params.character.persona}\n\n` +
       'Also act as an English tutor. In "corrections", list concrete grammar/word-choice ' +
       "mistakes in the user's LAST message only. Keep corrections empty if the sentence was fine. " +
+      'IMPORTANT: ignore punctuation entirely — never correct commas, periods or other ' +
+      'punctuation, and never add a correction that only changes punctuation. ' +
       'Write each "explanation" in Brazilian Portuguese (pt-BR), short and clear. ' +
       '"type" is a short English slug like "verb_tense", "article", "preposition", "word_choice".'
     : `${params.character.persona}\n\n` +

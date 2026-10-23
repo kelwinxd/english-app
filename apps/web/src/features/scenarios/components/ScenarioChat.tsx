@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Avatar } from '@/features/chat/components/Avatar';
 import { MessageList } from '@/features/chat/components/MessageList';
 import { RecorderControls } from '@/features/chat/components/RecorderControls';
+import { Switch } from '@/features/chat/components/Switch';
 import { useScenario } from '../useScenario';
 import { menuImage, type MenuItem, type Scenario } from '../data';
 
@@ -46,22 +47,18 @@ export function ScenarioChat({ scenario, onExit }: { scenario: Scenario; onExit:
               {scenario.label} · {scenario.place}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={s.toggleTimer}
-            title="Cronômetro de 20s por resposta (ligar/desligar)"
-            className={cn(
-              'flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium backdrop-blur transition-colors',
-              !s.timerEnabled
-                ? 'bg-white/20 text-white/90'
-                : s.secondsLeft > 5
-                  ? 'bg-white/25 text-white'
-                  : 'bg-destructive text-white',
-            )}
+          <div
+            className="flex items-center gap-1.5 rounded-full bg-black/30 px-2.5 py-1 text-xs font-medium text-white backdrop-blur"
+            title="Cronômetro de 20s por resposta"
           >
-            <Clock className="h-3 w-3" />
-            {s.timerEnabled ? `${s.secondsLeft}s` : 'off'}
-          </button>
+            <Clock className="h-3.5 w-3.5" />
+            <span
+              className={cn('tabular-nums', s.timerEnabled && s.secondsLeft <= 5 && 'text-red-300')}
+            >
+              {s.timerEnabled ? `${s.secondsLeft}s` : '20s'}
+            </span>
+            <Switch checked={s.timerEnabled} onChange={s.toggleTimer} />
+          </div>
         </div>
 
         {/* Mensagens sobre a cena */}

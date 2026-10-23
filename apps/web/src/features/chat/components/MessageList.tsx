@@ -1,5 +1,7 @@
-import { useEffect, useRef } from 'react';
-import { Loader2, Volume2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { BookmarkPlus, Check, Loader2, Volume2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { addItem } from '@/features/flashcards/store';
 import type { Correction, Entry, Stage } from '../types';
 import { TypingIndicator } from './TypingIndicator';
 
@@ -53,16 +55,46 @@ function UserBubble({ text, corrections }: { text: string; corrections: Correcti
 }
 
 function CorrectionList({ corrections }: { corrections: Correction[] }) {
+  const [saved, setSaved] = useState<Record<number, boolean>>({});
+
+  function save(c: Correction, j: number) {
+    const content = c.corrected.trim();
+    const itemType: 'word' | 'phrase' = content.split(/\s+/).length > 1 ? 'phrase' : 'word';
+    addItem({
+      content,
+      context: c.original,
+      source: 'chat_correction',
+      itemType,
+      tags: c.type ? [c.type] : [],
+    });
+    setSaved((s) => ({ ...s, [j]: true }));
+  }
+
   return (
     <div className="mt-2 space-y-2 rounded-xl border border-amber-300/50 bg-amber-50 p-3 text-sm dark:bg-amber-950/30">
       <div className="font-medium text-amber-700 dark:text-amber-400">Correções</div>
       {corrections.map((c, j) => (
-        <div key={j}>
-          <span className="text-muted-foreground line-through">{c.original}</span> →{' '}
-          <span className="font-medium">{c.corrected}</span>
-          <div className="text-xs text-muted-foreground">
-            <span className="rounded bg-muted px-1">{c.type}</span> {c.explanation}
+        <div key={j} className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <span className="text-muted-foreground line-through">{c.original}</span> →{' '}
+            <span className="font-medium">{c.corrected}</span>
+            <div className="text-xs text-muted-foreground">
+              <span className="rounded bg-muted px-1">{c.type}</span> {c.explanation}
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={() => save(c, j)}
+            disabled={saved[j]}
+            aria-label="Salvar no flashcard"
+            title={saved[j] ? 'Salvo nos flashcards' : 'Salvar no flashcard'}
+            className={cn(
+              'mt-0.5 shrink-0',
+              saved[j] ? 'text-emerald-600' : 'text-amber-700 hover:text-amber-900 dark:text-amber-400',
+            )}
+          >
+            {saved[j] ? <Check className="h-4 w-4" /> : <BookmarkPlus className="h-4 w-4" />}
+          </button>
         </div>
       ))}
     </div>
