@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Gamepad2, MessageCircle, type LucideIcon } from 'lucide-react';
+import { BookOpen, Gamepad2, Layers, MessageCircle, type LucideIcon } from 'lucide-react';
 
 type Pillar = {
   key: string;
@@ -13,6 +13,7 @@ const PILLARS: Pillar[] = [
   { key: 'aprender', label: 'Aprender', hint: 'Lições CEFR-J + quiz', Icon: BookOpen, to: '/aprender' },
   { key: 'jogar', label: 'Jogar', hint: 'Jogos com desafios do seu nível', Icon: Gamepad2, to: '/jogar' },
   { key: 'conversar', label: 'Conversar', hint: 'Áudio-chat com correção', Icon: MessageCircle, to: '/conversar' },
+  { key: 'flashcards', label: 'Flashcards', hint: 'Revisão espaçada das suas palavras', Icon: Layers, to: '/flashcards' },
 ];
 
 /** Os três botões principais da Home. Carrega os próprios dados e a navegação. */

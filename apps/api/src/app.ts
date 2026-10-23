@@ -5,6 +5,7 @@ import { env } from './env.js';
 import { healthRouter } from './routes/health.js';
 import { chatRouter } from './routes/chat.js';
 import { gameRouter } from './routes/game.js';
+import { srsRouter } from './routes/srs.js';
 
 export function createApp() {
   const app = express();
@@ -20,6 +21,7 @@ export function createApp() {
   app.use('/health', healthRouter);
   app.use('/chat', chatRouter);
   app.use('/game', gameRouter);
+  app.use('/srs', srsRouter);
 
   // 404
   app.use((_req, res) => {

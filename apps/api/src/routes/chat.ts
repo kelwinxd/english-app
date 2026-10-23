@@ -29,7 +29,7 @@ chatRouter.get('/characters', (_req, res) => {
   res.json({
     ready: chatReady(),
     maxTurns: env.CHAT_MAX_TURNS,
-    characters: CHARACTERS.map(({ id, name, role, blurb, avatar }) => ({
+    characters: CHARACTERS.filter((c) => !c.hidden).map(({ id, name, role, blurb, avatar }) => ({
       id,
       name,
       role,

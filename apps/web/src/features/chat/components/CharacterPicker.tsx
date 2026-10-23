@@ -12,8 +12,7 @@ export function CharacterPicker({
 }) {
   return (
     <>
-      <h1 className="mb-1 text-2xl font-bold">Conversar</h1>
-      <p className="mb-6 text-sm text-muted-foreground">Escolha com quem praticar.</p>
+      <h2 className="mb-2 text-sm font-semibold text-foreground">Conversa livre</h2>
 
       {meta && !meta.ready && (
         <p className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">

@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { useChat, BackLink, CharacterPicker, ChatWindow } from '@/features/chat';
+import { OccasionPicker, ScenarioChat, type Scenario } from '@/features/scenarios';
 
 export function Conversar() {
   const {
@@ -23,12 +25,18 @@ export function Conversar() {
     sendText,
   } = useChat();
 
+  const [scenario, setScenario] = useState<Scenario | null>(null);
+
   return (
     <main className="mx-auto flex h-dvh max-w-md flex-col px-4 py-4">
       <BackLink />
 
-      {!character ? (
+      {scenario ? (
+        <ScenarioChat scenario={scenario} onExit={() => setScenario(null)} />
+      ) : !character ? (
         <div className="flex-1 overflow-y-auto">
+          <h1 className="mb-4 text-2xl font-bold">Conversar</h1>
+          <OccasionPicker onPick={setScenario} />
           <CharacterPicker meta={meta} error={metaError} onSelect={selectCharacter} />
         </div>
       ) : (

@@ -8,6 +8,7 @@ export type Character = {
   avatar: string; // URL da foto de perfil (placeholder por enquanto)
   voice: 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
   persona: string;
+  hidden?: boolean; // personagens de "ocasião" não aparecem na conversa livre
 };
 
 export const CHARACTERS: Character[] = [
@@ -34,6 +35,21 @@ export const CHARACTERS: Character[] = [
       'You are Mr. Clarke, a polite but professional job interviewer. You are conducting ' +
       'a mock job interview with a candidate practicing English. Ask one clear interview ' +
       'question at a time, keep replies concise and professional (1-3 sentences).',
+  },
+  {
+    id: 'diner-waitress',
+    name: 'Sofia',
+    role: 'Garçonete',
+    blurb: 'Lanchonete: faça seu pedido em inglês.',
+    avatar: 'https://i.pravatar.cc/150?img=45',
+    voice: 'shimmer',
+    hidden: true,
+    persona:
+      "You are Sofia, a friendly waitress at Sunny's Diner, a casual American snack bar. " +
+      'The customer is a Brazilian practicing English, ordering from the menu: coffee, orange ' +
+      'juice, water, a sandwich, a hamburger, and a slice of cake. Take their order naturally, ' +
+      'confirm it, suggest items, and ask simple follow-ups (size, to stay or to go). Keep ' +
+      'replies short (1-2 sentences) and friendly; gently help if they get stuck.',
   },
 ];
 
