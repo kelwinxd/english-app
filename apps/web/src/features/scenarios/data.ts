@@ -20,6 +20,7 @@ export type Scenario = {
   characterName: string;
   avatar: string;
   place: string;
+  background: string; // cena ao fundo (Wikimedia Commons)
   openingLine: string; // primeira fala do personagem (inglês)
   menu: MenuItem[];
 };
@@ -38,6 +39,7 @@ export const SCENARIOS: Scenario[] = [
     characterName: 'Sofia',
     avatar: 'https://i.pravatar.cc/150?img=45',
     place: "Sunny's Diner",
+    background: 'Waitress.jpg',
     openingLine: "Hi there! Welcome to Sunny's Diner. What can I get you today?",
     menu: [
       { en: 'Coffee', pt: 'café', price: '$3', emoji: '☕', file: 'A small cup of coffee.JPG' },
@@ -57,6 +59,7 @@ export const SCENARIOS: Scenario[] = [
     characterName: '',
     avatar: '',
     place: '',
+    background: '',
     openingLine: '',
     menu: [],
   },
@@ -69,6 +72,7 @@ export const SCENARIOS: Scenario[] = [
     characterName: '',
     avatar: '',
     place: '',
+    background: '',
     openingLine: '',
     menu: [],
   },
@@ -81,6 +85,7 @@ export const SCENARIOS: Scenario[] = [
     characterName: '',
     avatar: '',
     place: '',
+    background: '',
     openingLine: '',
     menu: [],
   },

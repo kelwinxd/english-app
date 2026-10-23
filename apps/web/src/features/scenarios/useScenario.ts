@@ -14,9 +14,12 @@ export function useScenario(scenario: Scenario) {
   const [stage, setStage] = useState<Stage>('idle');
   const [error, setError] = useState<string | null>(null);
   const [remaining, setRemaining] = useState(TURN_MS);
+  const [timerEnabled, setTimerEnabled] = useState(false); // desligado por padrão
 
   const recorder = useRecorder();
   const tickRef = useRef<number | null>(null);
+  const timerEnabledRef = useRef(timerEnabled);
+  timerEnabledRef.current = timerEnabled;
 
   function clearTick() {
     if (tickRef.current !== null) {
@@ -27,6 +30,10 @@ export function useScenario(scenario: Scenario) {
 
   function startTurnTimer() {
     clearTick();
+    if (!timerEnabledRef.current) {
+      setRemaining(TURN_MS);
+      return;
+    }
     const deadline = Date.now() + TURN_MS;
     setRemaining(TURN_MS);
     tickRef.current = window.setInterval(() => {
@@ -40,11 +47,17 @@ export function useScenario(scenario: Scenario) {
     }, 100);
   }
 
+  useEffect(() => () => clearTick(), []);
+
+  // Liga/desliga a contagem quando o jogador alterna o cronômetro.
   useEffect(() => {
-    startTurnTimer();
-    return () => clearTick();
+    if (timerEnabled) startTurnTimer();
+    else {
+      clearTick();
+      setRemaining(TURN_MS);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [timerEnabled]);
 
   function fillLastUserCorrections(corrections: Correction[]) {
     setEntries((prev) => {
@@ -140,6 +153,8 @@ export function useScenario(scenario: Scenario) {
     stage,
     error,
     busy: stage !== 'idle',
+    timerEnabled,
+    toggleTimer: () => setTimerEnabled((v) => !v),
     secondsLeft: Math.ceil(remaining / 1000),
     timePct: Math.max(0, Math.min(100, (remaining / TURN_MS) * 100)),
     isRecording: recorder.state === 'recording',

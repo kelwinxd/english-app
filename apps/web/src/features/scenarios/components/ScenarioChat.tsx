@@ -9,72 +9,98 @@ import { menuImage, type MenuItem, type Scenario } from '../data';
 
 export function ScenarioChat({ scenario, onExit }: { scenario: Scenario; onExit: () => void }) {
   const s = useScenario(scenario);
+  const [bgFailed, setBgFailed] = useState(false);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border bg-background">
-      {/* Header */}
-      <div className="flex shrink-0 items-center gap-2 border-b px-3 py-2">
-        <button
-          type="button"
-          onClick={onExit}
-          aria-label="Voltar"
-          className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-accent"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
-        <Avatar src={scenario.avatar} name={scenario.characterName} size={38} />
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold">{scenario.characterName}</p>
-          <p className="truncate text-xs text-muted-foreground">
-            {scenario.label} · {scenario.place}
-          </p>
-        </div>
-        <span
-          className={cn(
-            'flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium',
-            s.secondsLeft > 5 ? 'bg-muted text-muted-foreground' : 'bg-destructive/15 text-destructive',
-          )}
-        >
-          <Clock className="h-3 w-3" />
-          {s.secondsLeft}s
-        </span>
-      </div>
-
-      {/* Cardápio */}
-      <div className="shrink-0 border-b bg-muted/30 px-2 py-2">
-        <p className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-          Cardápio
-        </p>
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {scenario.menu.map((item) => (
-            <MenuCard key={item.en} item={item} />
-          ))}
-        </div>
-      </div>
-
-      <MessageList entries={s.entries} stage={s.stage} />
-
-      {/* Timer bar */}
-      <div className="h-1 w-full shrink-0 bg-muted">
-        <div
-          className={cn('h-full', s.timePct > 25 ? 'bg-primary' : 'bg-destructive')}
-          style={{ width: `${s.timePct}%`, transition: 'width 100ms linear' }}
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border">
+      {/* Cena de fundo (garçonete/lanchonete) */}
+      {scenario.background && !bgFailed ? (
+        <img
+          src={menuImage(scenario.background)}
+          alt=""
+          onError={() => setBgFailed(true)}
+          className="absolute inset-0 h-full w-full object-cover"
         />
-      </div>
+      ) : (
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-200 to-orange-400" />
+      )}
+      {/* Overlay para legibilidade */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-black/70" />
 
-      <div className="shrink-0 border-t px-3 py-2">
-        {s.error && <p className="mb-2 text-sm text-destructive">{s.error}</p>}
-        <RecorderControls
-          limitReached={false}
-          isRecording={s.isRecording}
-          seconds={s.recordSeconds}
-          busy={s.busy}
-          hint={s.recorderError}
-          onStart={s.startRecording}
-          onStop={s.stopAndSend}
-          onCancel={s.cancelRecording}
-          onSend={s.sendText}
-        />
+      {/* Conteúdo sobre a cena */}
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col">
+        {/* Header */}
+        <div className="flex shrink-0 items-center gap-2 px-3 py-2">
+          <button
+            type="button"
+            onClick={onExit}
+            aria-label="Voltar"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur hover:bg-white/30"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <Avatar src={scenario.avatar} name={scenario.characterName} size={38} className="ring-2 ring-white/70" />
+          <div className="min-w-0 flex-1 text-white drop-shadow">
+            <p className="truncate text-sm font-semibold">{scenario.characterName}</p>
+            <p className="truncate text-xs text-white/80">
+              {scenario.label} · {scenario.place}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={s.toggleTimer}
+            title="Cronômetro de 20s por resposta (ligar/desligar)"
+            className={cn(
+              'flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium backdrop-blur transition-colors',
+              !s.timerEnabled
+                ? 'bg-white/20 text-white/90'
+                : s.secondsLeft > 5
+                  ? 'bg-white/25 text-white'
+                  : 'bg-destructive text-white',
+            )}
+          >
+            <Clock className="h-3 w-3" />
+            {s.timerEnabled ? `${s.secondsLeft}s` : 'off'}
+          </button>
+        </div>
+
+        {/* Mensagens sobre a cena */}
+        <MessageList entries={s.entries} stage={s.stage} />
+
+        {/* Alimentos — colados ao chat, parte da cena */}
+        <div className="shrink-0 px-2 pb-1 pt-1">
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {scenario.menu.map((item) => (
+              <MenuCard key={item.en} item={item} />
+            ))}
+          </div>
+        </div>
+
+        {/* Barra do cronômetro (só quando ligado) */}
+        {s.timerEnabled && (
+          <div className="h-1 w-full shrink-0 bg-white/20">
+            <div
+              className={cn('h-full', s.timePct > 25 ? 'bg-primary' : 'bg-destructive')}
+              style={{ width: `${s.timePct}%`, transition: 'width 100ms linear' }}
+            />
+          </div>
+        )}
+
+        {/* Entrada (fundo sólido para legibilidade) */}
+        <div className="shrink-0 border-t bg-background px-3 py-2">
+          {s.error && <p className="mb-2 text-sm text-destructive">{s.error}</p>}
+          <RecorderControls
+            limitReached={false}
+            isRecording={s.isRecording}
+            seconds={s.recordSeconds}
+            busy={s.busy}
+            hint={s.recorderError}
+            onStart={s.startRecording}
+            onStop={s.stopAndSend}
+            onCancel={s.cancelRecording}
+            onSend={s.sendText}
+          />
+        </div>
       </div>
     </div>
   );
@@ -83,9 +109,9 @@ export function ScenarioChat({ scenario, onExit }: { scenario: Scenario; onExit:
 function MenuCard({ item }: { item: MenuItem }) {
   const [failed, setFailed] = useState(false);
   return (
-    <div className="flex w-20 shrink-0 flex-col items-center rounded-xl border bg-card p-1.5 text-center">
+    <div className="flex w-[72px] shrink-0 flex-col items-center rounded-xl bg-black/35 p-1.5 text-center text-white backdrop-blur">
       {failed ? (
-        <span className="text-2xl">{item.emoji}</span>
+        <span className="flex h-12 w-full items-center justify-center text-2xl">{item.emoji}</span>
       ) : (
         <img
           src={menuImage(item.file)}
@@ -95,7 +121,7 @@ function MenuCard({ item }: { item: MenuItem }) {
         />
       )}
       <span className="mt-1 w-full truncate text-[11px] font-medium">{item.en}</span>
-      <span className="text-[10px] text-muted-foreground">{item.price}</span>
+      <span className="text-[10px] text-white/80">{item.price}</span>
     </div>
   );
 }
