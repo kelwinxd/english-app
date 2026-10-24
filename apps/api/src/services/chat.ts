@@ -28,6 +28,16 @@ export function chatReady(): boolean {
   return openaiReady();
 }
 
+/**
+ * TTS avulso: lê em voz alta um texto PRONTO (sem LLM). Usado por frases
+ * estáticas, como a fala do personagem quando o cronômetro zera.
+ */
+export async function speak(text: string, voice: Character['voice']): Promise<string> {
+  const api = getOpenAI();
+  const speech = await api.audio.speech.create({ model: 'tts-1', voice, input: text });
+  return Buffer.from(await speech.arrayBuffer()).toString('base64');
+}
+
 // Extensão que o Whisper usa pra detectar o formato do áudio.
 function extFromMime(mime: string): string {
   if (mime.includes('webm')) return 'webm';
@@ -137,16 +147,22 @@ async function respond(userText: string, params: TurnParams): Promise<TurnResult
   const raw = completion.choices[0]?.message?.content ?? '{}';
   const parsed = JSON.parse(raw) as { character_reply: string; corrections: Correction[] };
   const replyText = parsed.character_reply;
-  const corrections = correctGrammar ? parsed.corrections ?? [] : [];
+  // Descarta "correções" que não mudam nada de fato (o modelo às vezes devolve
+  // original === corrigido, só variando pontuação/caixa — ex.: "a sandwich
+  // would be good → a sandwich would be good"). Essas confundem o usuário.
+  const norm = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/[.,!?;:'"]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  const corrections = correctGrammar
+    ? (parsed.corrections ?? []).filter((c) => norm(c.original) !== norm(c.corrected))
+    : [];
   await params.onReply?.(replyText, corrections);
 
   // TTS — OpenAI tts-1 (protótipo; ElevenLabs entra na produtização).
-  const speech = await api.audio.speech.create({
-    model: 'tts-1',
-    voice: params.character.voice,
-    input: replyText,
-  });
-  const replyAudioBase64 = Buffer.from(await speech.arrayBuffer()).toString('base64');
+  const replyAudioBase64 = await speak(replyText, params.character.voice);
 
   return { userText, replyText, corrections, replyAudioBase64 };
 }

@@ -1,10 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRecorder } from '@/hooks/useRecorder';
-import { sendMessageStream, sendMessageTextStream } from '@/features/chat/api/chatApi';
+import { sendMessageStream, sendMessageTextStream, speakText } from '@/features/chat/api/chatApi';
 import type { ChatStreamEvent, Correction, Entry, Stage } from '@/features/chat/types';
 import type { Scenario } from './data';
 
 const TURN_MS = 20_000; // 20s para o jogador responder
+
+// Frases prontas (estáticas) que o personagem "fala" quando o tempo zera —
+// como numa conversa real. Não passam pela IA: só são lidas em voz alta (TTS).
+const TIMEOUT_LINES = [
+  "Sorry, did you understand what I said? Is everything okay?",
+  "Hello? Are you still with me? Did you get what I said?",
+  "Take your time... did you understand me? Is everything alright?",
+];
 
 export function useScenario(scenario: Scenario) {
   const [conversationId] = useState(() => crypto.randomUUID());
@@ -15,6 +23,7 @@ export function useScenario(scenario: Scenario) {
   const [error, setError] = useState<string | null>(null);
   const [remaining, setRemaining] = useState(TURN_MS);
   const [timerEnabled, setTimerEnabled] = useState(false); // desligado por padrão
+  const [correctGrammar, setCorrectGrammar] = useState(true); // corretor ligado por padrão
 
   const recorder = useRecorder();
   const tickRef = useRef<number | null>(null);
@@ -40,11 +49,26 @@ export function useScenario(scenario: Scenario) {
       const left = deadline - Date.now();
       if (left <= 0) {
         setRemaining(0);
-        clearTick(); // prática: não encerra, só para a contagem
+        clearTick(); // não encerra: o personagem cobra e o timer só volta ao responder
+        void handleTimeout();
       } else {
         setRemaining(left);
       }
     }, 100);
+  }
+
+  // Tempo esgotado: o personagem "fala" uma frase pronta (como numa conversa
+  // real). O texto é estático; só a leitura (áudio) vem do TTS.
+  async function handleTimeout() {
+    const line = TIMEOUT_LINES[Math.floor(Math.random() * TIMEOUT_LINES.length)];
+    setEntries((prev) => [...prev, { role: 'ai', text: line, audio: '' }]);
+    try {
+      const { audio } = await speakText({ characterId: scenario.characterId, text: line });
+      fillLastAiAudio(audio);
+      new Audio(audio).play().catch(() => {});
+    } catch {
+      /* sem áudio: fica só o texto na tela */
+    }
   }
 
   useEffect(() => () => clearTick(), []);
@@ -119,7 +143,7 @@ export function useScenario(scenario: Scenario) {
     setStage('thinking');
     try {
       await sendMessageTextStream(
-        { text: trimmed, conversationId, characterId: scenario.characterId, correctGrammar: true },
+        { text: trimmed, conversationId, characterId: scenario.characterId, correctGrammar },
         handleEvent,
       );
     } catch (e) {
@@ -137,7 +161,7 @@ export function useScenario(scenario: Scenario) {
     setStage('stt');
     try {
       await sendMessageStream(
-        { audio: blob, conversationId, characterId: scenario.characterId, correctGrammar: true },
+        { audio: blob, conversationId, characterId: scenario.characterId, correctGrammar },
         handleEvent,
       );
     } catch (e) {
@@ -155,6 +179,8 @@ export function useScenario(scenario: Scenario) {
     busy: stage !== 'idle',
     timerEnabled,
     toggleTimer: () => setTimerEnabled((v) => !v),
+    correctGrammar,
+    toggleGrammar: () => setCorrectGrammar((v) => !v),
     secondsLeft: Math.ceil(remaining / 1000),
     timePct: Math.max(0, Math.min(100, (remaining / TURN_MS) * 100)),
     isRecording: recorder.state === 'recording',

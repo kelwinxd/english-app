@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
-import type { GameComponentProps } from '../../types';
 import { THEME_WORDS, type ThemeWord, type WordTheme } from './themeWords';
 
 const GRID = 9; // total de cards por rodada
@@ -15,17 +14,15 @@ function pick<T>(arr: T[], n: number): T[] {
  * Modo "Words choose": aparecem vários cards de palavras e o jogador toca só
  * nas do tema, antes do tempo acabar. 1 palavra do tema por rodada; após 3
  * acertos, 2 por rodada. Errar um card fora do tema ou estourar o tempo = fim
- * (os cards do tema não escolhidos revelam a tradução).
+ * (os cards do tema não escolhidos revelam a tradução, e a tela fica para ler).
  */
 export function WordsChoose({
   theme,
   roundMs,
-  onFinish,
   onExit,
 }: {
   theme: WordTheme;
   roundMs: number;
-  onFinish: GameComponentProps['onFinish'];
   onExit: () => void;
 }) {
   const [successes, setSuccesses] = useState(0);
@@ -36,8 +33,7 @@ export function WordsChoose({
   const [remaining, setRemaining] = useState(roundMs);
 
   const tickRef = useRef<number | null>(null);
-  const successesRef = useRef(0);
-  successesRef.current = successes;
+  const lastThemeRef = useRef<string[]>([]); // palavras do tema da rodada anterior
 
   // Distratores: palavras dos OUTROS temas (sem repetir as do tema atual).
   const otherWords = useMemo(() => {
@@ -76,7 +72,12 @@ export function WordsChoose({
 
   function newRound(succ: number) {
     const count = themeCountFor(succ);
-    const themePicks = pick(theme.words, count).map((w) => ({ ...w, isTheme: true }));
+    // Evita repetir a(s) palavra(s) do tema da rodada anterior.
+    const avail = theme.words.filter((w) => !lastThemeRef.current.includes(w.en));
+    const pool = avail.length >= count ? avail : theme.words;
+    const themePicks = pick(pool, count).map((w) => ({ ...w, isTheme: true }));
+    lastThemeRef.current = themePicks.map((w) => w.en);
+
     const distractors = pick(otherWords, GRID - count).map((w) => ({ ...w, isTheme: false }));
     const mixed = [...themePicks, ...distractors]
       .sort(() => Math.random() - 0.5)
@@ -90,11 +91,13 @@ export function WordsChoose({
 
   function lose() {
     clearTick();
-    setLost(true);
-    window.setTimeout(() => {
-      const n = successesRef.current;
-      onFinish({ score: n, summary: `Você acertou ${n} rodada${n === 1 ? '' : 's'}.` });
-    }, 1900);
+    setLost(true); // não muda de tela — deixa o reveal + botões pra ler
+  }
+
+  function replay() {
+    setSuccesses(0);
+    lastThemeRef.current = [];
+    newRound(0);
   }
 
   function click(card: Card) {
@@ -169,7 +172,7 @@ export function WordsChoose({
                   isSel && 'border-green-500 bg-green-500/15',
                   isWrong && 'border-red-500 bg-red-500/15',
                   reveal && 'border-amber-400 bg-amber-100 dark:bg-amber-950/30',
-                  !isSel && !isWrong && !reveal && 'hover:border-primary hover:bg-accent',
+                  !isSel && !isWrong && !reveal && !lost && 'hover:border-primary hover:bg-accent',
                 )}
               >
                 <span className="font-medium">{c.en}</span>
@@ -184,10 +187,30 @@ export function WordsChoose({
         </div>
       </div>
 
+      {/* Fim de rodada: fica na tela pra ler, com ações embaixo */}
       {lost && (
-        <p className="pt-2 text-center text-sm font-medium text-destructive">
-          {wrongId !== null ? 'Essa não era do tema!' : 'Tempo esgotado!'}
-        </p>
+        <div className="shrink-0 pt-3">
+          <p className="mb-2 text-center text-sm font-medium text-destructive">
+            {wrongId !== null ? 'Essa não era do tema!' : 'Tempo esgotado!'} · você acertou {successes}{' '}
+            rodada{successes === 1 ? '' : 's'}
+          </p>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={onExit}
+              className="flex-1 rounded-lg bg-secondary px-5 py-2.5 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
+            >
+              Voltar
+            </button>
+            <button
+              type="button"
+              onClick={replay}
+              className="flex-1 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground"
+            >
+              Jogar novamente
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

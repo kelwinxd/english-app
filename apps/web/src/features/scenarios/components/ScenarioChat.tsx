@@ -4,8 +4,8 @@ import { cn } from '@/lib/utils';
 import { Avatar } from '@/features/chat/components/Avatar';
 import { MessageList } from '@/features/chat/components/MessageList';
 import { RecorderControls } from '@/features/chat/components/RecorderControls';
-import { Switch } from '@/features/chat/components/Switch';
 import { useScenario } from '../useScenario';
+import { ScenarioSettings } from './ScenarioSettings';
 import { menuImage, type MenuItem, type Scenario } from '../data';
 
 export function ScenarioChat({ scenario, onExit }: { scenario: Scenario; onExit: () => void }) {
@@ -47,18 +47,21 @@ export function ScenarioChat({ scenario, onExit }: { scenario: Scenario; onExit:
               {scenario.label} · {scenario.place}
             </p>
           </div>
-          <div
-            className="flex items-center gap-1.5 rounded-full bg-black/30 px-2.5 py-1 text-xs font-medium text-white backdrop-blur"
-            title="Cronômetro de 20s por resposta"
-          >
-            <Clock className="h-3.5 w-3.5" />
-            <span
-              className={cn('tabular-nums', s.timerEnabled && s.secondsLeft <= 5 && 'text-red-300')}
-            >
-              {s.timerEnabled ? `${s.secondsLeft}s` : '20s'}
-            </span>
-            <Switch checked={s.timerEnabled} onChange={s.toggleTimer} />
-          </div>
+          {/* Contagem só aparece quando o cronômetro está ligado */}
+          {s.timerEnabled && (
+            <div className="flex items-center gap-1.5 rounded-full bg-black/30 px-2.5 py-1 text-xs font-medium text-white backdrop-blur">
+              <Clock className="h-3.5 w-3.5" />
+              <span className={cn('tabular-nums', s.secondsLeft <= 5 && 'text-red-300')}>
+                {s.secondsLeft}s
+              </span>
+            </div>
+          )}
+          <ScenarioSettings
+            timerEnabled={s.timerEnabled}
+            onToggleTimer={s.toggleTimer}
+            correctGrammar={s.correctGrammar}
+            onToggleGrammar={s.toggleGrammar}
+          />
         </div>
 
         {/* Mensagens sobre a cena */}

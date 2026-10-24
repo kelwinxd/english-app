@@ -327,7 +327,7 @@ export function WordChainGame({ onFinish, onExit }: GameComponentProps) {
 
   // Modo "Words choose" tem o próprio tabuleiro (sem chat/áudio).
   if (mode === 'choose') {
-    return <WordsChoose theme={theme} roundMs={roundMs} onFinish={onFinish} onExit={onExit} />;
+    return <WordsChoose theme={theme} roundMs={roundMs} onExit={onExit} />;
   }
 
   // ---------- Jogando (Free style) ----------

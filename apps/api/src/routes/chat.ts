@@ -7,6 +7,7 @@ import {
   chatReady,
   processTextTurn,
   processTurn,
+  speak,
   type ChatMessage,
   type Correction,
   type TurnResult,
@@ -86,6 +87,34 @@ chatRouter.post('/message', upload.single('audio'), async (req, res) => {
       ...cb,
     }),
   );
+});
+
+// TTS avulso: lê uma frase PRONTA na voz do personagem (sem LLM). Usado pelas
+// falas estáticas do cenário quando o cronômetro zera.
+const ttsSchema = z.object({
+  characterId: z.string().min(1),
+  text: z.string().trim().min(1).max(300),
+});
+
+chatRouter.post('/tts', async (req, res) => {
+  if (!chatReady()) {
+    return res.status(503).json({ error: 'OPENAI_API_KEY não configurada no servidor.' });
+  }
+  const parsed = ttsSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'characterId e text são obrigatórios.' });
+  }
+  const character = getCharacter(parsed.data.characterId);
+  if (!character) {
+    return res.status(400).json({ error: 'Personagem inválido.' });
+  }
+  try {
+    const audioBase64 = await speak(parsed.data.text, character.voice);
+    res.json({ audio: `data:audio/mp3;base64,${audioBase64}` });
+  } catch (err) {
+    console.error('[chat] erro no TTS:', err);
+    res.status(500).json({ error: 'Falha ao gerar o áudio.' });
+  }
 });
 
 const textBodySchema = z.object({

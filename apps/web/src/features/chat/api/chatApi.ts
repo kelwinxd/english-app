@@ -1,5 +1,10 @@
-import { apiGet, apiPostFormStream, apiPostJsonStream } from '@/lib/api';
+import { apiGet, apiPost, apiPostFormStream, apiPostJsonStream } from '@/lib/api';
 import type { CharactersResponse, ChatStreamEvent } from '../types';
+
+/** TTS avulso: lê uma frase pronta na voz do personagem. Retorna data URL mp3. */
+export function speakText(params: { characterId: string; text: string }): Promise<{ audio: string }> {
+  return apiPost<{ audio: string }>('/chat/tts', params);
+}
 
 // Única porta de entrada para a API do chat. As pages não chamam fetch;
 // tudo passa por aqui (e por baixo, pelos helpers genéricos de @/lib/api).
