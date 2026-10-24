@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { BookmarkPlus, Check, Loader2, Volume2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { addItem } from '@/features/flashcards/store';
+import { suggestItem } from '@/features/flashcards/api';
 import type { Correction, Entry, Stage } from '../types';
 import { TypingIndicator } from './TypingIndicator';
 
@@ -56,17 +57,29 @@ function UserBubble({ text, corrections }: { text: string; corrections: Correcti
 
 function CorrectionList({ corrections }: { corrections: Correction[] }) {
   const [saved, setSaved] = useState<Record<number, boolean>>({});
+  const [saving, setSaving] = useState<number | null>(null);
 
-  function save(c: Correction, j: number) {
+  async function save(c: Correction, j: number) {
     const content = c.corrected.trim();
+    if (!content || saving !== null) return;
     const itemType: 'word' | 'phrase' = content.split(/\s+/).length > 1 ? 'phrase' : 'word';
-    addItem({
-      content,
-      context: c.original,
-      source: 'chat_correction',
-      itemType,
-      tags: c.type ? [c.type] : [],
-    });
+    setSaving(j);
+
+    // Puxa tradução + exemplo + tags da IA pra o card não ficar vazio.
+    let translation = '';
+    let example = '';
+    let tags = c.type ? [c.type] : [];
+    try {
+      const s = await suggestItem(content);
+      translation = s.translation;
+      example = s.example;
+      tags = [...new Set([...tags, ...s.tags])];
+    } catch {
+      /* sem IA: salva só com conteúdo + contexto */
+    }
+
+    addItem({ content, translation, example, context: c.original, source: 'chat_correction', itemType, tags });
+    setSaving(null);
     setSaved((s) => ({ ...s, [j]: true }));
   }
 
@@ -85,7 +98,7 @@ function CorrectionList({ corrections }: { corrections: Correction[] }) {
           <button
             type="button"
             onClick={() => save(c, j)}
-            disabled={saved[j]}
+            disabled={saved[j] || saving !== null}
             aria-label="Salvar no flashcard"
             title={saved[j] ? 'Salvo nos flashcards' : 'Salvar no flashcard'}
             className={cn(
@@ -93,7 +106,13 @@ function CorrectionList({ corrections }: { corrections: Correction[] }) {
               saved[j] ? 'text-emerald-600' : 'text-amber-700 hover:text-amber-900 dark:text-amber-400',
             )}
           >
-            {saved[j] ? <Check className="h-4 w-4" /> : <BookmarkPlus className="h-4 w-4" />}
+            {saved[j] ? (
+              <Check className="h-4 w-4" />
+            ) : saving === j ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <BookmarkPlus className="h-4 w-4" />
+            )}
           </button>
         </div>
       ))}

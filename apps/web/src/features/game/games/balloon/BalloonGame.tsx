@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useGameChallenges } from '../../hooks/useGameChallenges';
 import type { Challenge, GameComponentProps } from '../../types';
 
-const DURATION = 9; // segundos para o balão subir até o topo
+const DURATION = 15; // segundos para o balão subir até o topo (mais lento)
 const COLORS = ['bg-rose-400', 'bg-sky-400', 'bg-amber-400', 'bg-emerald-400'];
+const STRINGS = ['bg-rose-300', 'bg-sky-300', 'bg-amber-300', 'bg-emerald-300'];
 
 /**
  * Jogo do balão. Implementa GameComponentProps: carrega os próprios desafios
@@ -64,10 +65,23 @@ function BalloonBoard({
   const current = challenges[idx];
   const total = challenges.length;
 
+  // Pequena variação por balão: atraso, duração e deslocamento horizontal —
+  // pra não subirem todos alinhados na mesma linha.
+  const jitter = useMemo(
+    () =>
+      current.options.map(() => ({
+        delay: Math.random() * 0.9,
+        dur: DURATION + (Math.random() * 3 - 1.5),
+        x: Math.random() * 10 - 5,
+      })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [idx],
+  );
+
   useEffect(() => {
     setAnswered(false);
     setPicked(null);
-    timerRef.current = window.setTimeout(() => resolve(null), DURATION * 1000);
+    timerRef.current = window.setTimeout(() => resolve(null), (DURATION + 1.5) * 1000);
     return () => {
       if (timerRef.current) window.clearTimeout(timerRef.current);
     };
@@ -122,12 +136,13 @@ function BalloonBoard({
               type="button"
               onClick={() => resolve(i)}
               disabled={answered}
-              className="absolute"
+              className="absolute flex flex-col items-center"
               style={{
-                left: `${((i + 0.5) * 100) / current.options.length}%`,
+                left: `calc(${((i + 0.5) * 100) / current.options.length}% + ${jitter[i].x}px)`,
                 transform: 'translateX(-50%)',
                 top: '100%',
-                animation: `balloon-rise ${DURATION}s linear forwards`,
+                animation: `balloon-rise ${jitter[i].dur}s linear forwards`,
+                animationDelay: `${jitter[i].delay}s`,
                 animationPlayState: answered ? 'paused' : 'running',
               }}
             >
@@ -141,6 +156,9 @@ function BalloonBoard({
               >
                 {opt}
               </span>
+              {/* nó + fio do balão */}
+              <span className={cn('h-1.5 w-1.5 rounded-full', COLORS[i % COLORS.length])} />
+              <span className={cn('h-5 w-px', STRINGS[i % STRINGS.length])} />
             </button>
           );
         })}

@@ -4,20 +4,15 @@ import { useRecorder } from '@/hooks/useRecorder';
 import { cn } from '@/lib/utils';
 import { checkWord, checkTextWord } from '../../api/gameApi';
 import type { GameComponentProps } from '../../types';
+import { THEME_WORDS, type WordTheme } from './themeWords';
+import { WordsChoose } from './WordsChoose';
 
 const TIME_OPTIONS = [5000, 10000]; // 5s ou 10s por palavra
-
-const THEMES = [
-  { label: 'Cozinha', en: 'kitchen and cooking' },
-  { label: 'Tecnologia', en: 'technology' },
-  { label: 'Trabalho', en: 'work and office' },
-  { label: 'Viagem', en: 'travel' },
-  { label: 'Esportes', en: 'sports' },
-  { label: 'Natureza', en: 'nature' },
-];
+const THEMES = THEME_WORDS;
 
 type Phase = 'intro' | 'waiting' | 'recording' | 'checking';
-type Theme = (typeof THEMES)[number];
+type Theme = WordTheme;
+type Mode = 'free' | 'choose';
 
 type Difficulty = 'normal' | 'surprise' | 'shift';
 const DIFFICULTIES: { id: Difficulty; label: string; hint: string }[] = [
@@ -44,6 +39,7 @@ export function WordChainGame({ onFinish, onExit }: GameComponentProps) {
   const [note, setNote] = useState<string | null>(null);
   const [typedWord, setTypedWord] = useState('');
   const [difficulty, setDifficulty] = useState<Difficulty>('normal');
+  const [mode, setMode] = useState<Mode>('free');
 
   const recorder = useRecorder();
   const tickRef = useRef<number | null>(null);
@@ -93,7 +89,7 @@ export function WordChainGame({ onFinish, onExit }: GameComponentProps) {
 
   function start() {
     lastModeRef.current = null;
-    if (difficulty !== 'normal') {
+    if (mode === 'free' && difficulty !== 'normal') {
       setTheme(randomTheme());
     }
     themeWordsRef.current = 0;
@@ -102,7 +98,7 @@ export function WordChainGame({ onFinish, onExit }: GameComponentProps) {
     setTypedWord('');
     setNote(null);
     setPhase('waiting');
-    startTimer();
+    if (mode === 'free') startTimer(); // o modo choose tem seu próprio timer
   }
 
   function normalizeWord(word: string) {
@@ -199,7 +195,7 @@ export function WordChainGame({ onFinish, onExit }: GameComponentProps) {
 
   // ---------- Intro ----------
   if (phase === 'intro') {
-    const hideTheme = difficulty !== 'normal';
+    const hideTheme = mode === 'free' && difficulty !== 'normal';
     return (
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center text-center">
         <Genie />
@@ -226,15 +222,43 @@ export function WordChainGame({ onFinish, onExit }: GameComponentProps) {
         )}
 
         <p className="mb-5 max-w-xs text-sm text-muted-foreground">
-          Fale ou digite uma palavra em inglês do tema a cada {roundMs / 1000}s. Acaba se você
-          repetir, fugir do tema ou o tempo zerar.
+          {mode === 'free'
+            ? `Fale ou digite uma palavra em inglês do tema a cada ${roundMs / 1000}s. Acaba se você repetir, fugir do tema ou o tempo zerar.`
+            : `Toque só nas palavras do tema entre os cards, antes do tempo acabar.`}
         </p>
 
         <div className="my-4 h-px w-full max-w-xs bg-border" />
 
-        {/* Tempo por palavra */}
+        {/* Modo */}
         <div className="mb-5 flex flex-col items-center gap-2">
-          <span className="text-xs font-medium text-muted-foreground">Tempo por palavra</span>
+          <span className="text-xs font-medium text-muted-foreground">Modo</span>
+          <div className="flex gap-2">
+            {(
+              [
+                { id: 'free', label: 'Free style' },
+                { id: 'choose', label: 'Words choose' },
+              ] as { id: Mode; label: string }[]
+            ).map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => setMode(m.id)}
+                className={cn(
+                  'rounded-lg border px-3 py-1.5 text-sm transition-colors',
+                  mode === m.id ? 'border-primary bg-primary text-primary-foreground' : 'hover:bg-accent',
+                )}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tempo */}
+        <div className="mb-5 flex flex-col items-center gap-2">
+          <span className="text-xs font-medium text-muted-foreground">
+            {mode === 'free' ? 'Tempo por palavra' : 'Tempo por rodada'}
+          </span>
           <div className="flex gap-2">
             {TIME_OPTIONS.map((ms) => (
               <button
@@ -254,30 +278,32 @@ export function WordChainGame({ onFinish, onExit }: GameComponentProps) {
           </div>
         </div>
 
-        {/* Dificuldade */}
-        <div className="mb-5 flex flex-col items-center gap-2">
-          <span className="text-xs font-medium text-muted-foreground">Dificuldade</span>
-          <div className="flex flex-wrap justify-center gap-2">
-            {DIFFICULTIES.map((d) => (
-              <button
-                key={d.id}
-                type="button"
-                onClick={() => setDifficulty(d.id)}
-                className={cn(
-                  'rounded-lg border px-3 py-1.5 text-sm transition-colors',
-                  difficulty === d.id
-                    ? 'border-primary bg-primary text-primary-foreground'
-                    : 'hover:bg-accent',
-                )}
-              >
-                {d.label}
-              </button>
-            ))}
+        {/* Dificuldade (só no Free style) */}
+        {mode === 'free' && (
+          <div className="mb-5 flex flex-col items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground">Dificuldade</span>
+            <div className="flex flex-wrap justify-center gap-2">
+              {DIFFICULTIES.map((d) => (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => setDifficulty(d.id)}
+                  className={cn(
+                    'rounded-lg border px-3 py-1.5 text-sm transition-colors',
+                    difficulty === d.id
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'hover:bg-accent',
+                  )}
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
+            <span className="max-w-xs text-xs text-muted-foreground">
+              {DIFFICULTIES.find((d) => d.id === difficulty)?.hint}
+            </span>
           </div>
-          <span className="max-w-xs text-xs text-muted-foreground">
-            {DIFFICULTIES.find((d) => d.id === difficulty)?.hint}
-          </span>
-        </div>
+        )}
 
         <div className="mt-6 flex w-full max-w-xs gap-3">
           <button
@@ -299,7 +325,12 @@ export function WordChainGame({ onFinish, onExit }: GameComponentProps) {
     );
   }
 
-  // ---------- Jogando ----------
+  // Modo "Words choose" tem o próprio tabuleiro (sem chat/áudio).
+  if (mode === 'choose') {
+    return <WordsChoose theme={theme} roundMs={roundMs} onFinish={onFinish} onExit={onExit} />;
+  }
+
+  // ---------- Jogando (Free style) ----------
   const pct = Math.max(0, Math.min(100, (remaining / roundMs) * 100));
 
   return (
