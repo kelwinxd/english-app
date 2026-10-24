@@ -2,13 +2,13 @@ import { Router } from 'express';
 import multer from 'multer';
 import { z } from 'zod';
 import { env } from '../env.js';
+import { getPersistence, type ConversationState } from '../persistence/index.js';
 import { CHARACTERS, getCharacter } from '../services/characters.js';
 import {
   chatReady,
   processTextTurn,
   processTurn,
   speak,
-  type ChatMessage,
   type Correction,
   type TurnResult,
 } from '../services/chat.js';
@@ -22,9 +22,9 @@ const upload = multer({
   limits: { fileSize: 25 * 1024 * 1024 },
 });
 
-// Estado em memória do protótipo (sem banco ainda). conversationId vem do front.
-type ConvState = { turns: number; history: ChatMessage[] };
-const conversations = new Map<string, ConvState>();
+// Repositório de conversas (hoje em memória, trocável por banco sem mexer aqui).
+// conversationId vem do front.
+const conversations = getPersistence().conversations;
 
 chatRouter.get('/characters', (_req, res) => {
   res.json({
@@ -68,7 +68,7 @@ chatRouter.post('/message', upload.single('audio'), async (req, res) => {
     return res.status(400).json({ error: 'Personagem inválido.' });
   }
 
-  const state = conversations.get(parsed.data.conversationId) ?? { turns: 0, history: [] };
+  const state = (await conversations.get(parsed.data.conversationId)) ?? { turns: 0, history: [] };
 
   // Trava de custo: teto de trocas por conversa.
   if (state.turns >= env.CHAT_MAX_TURNS) {
@@ -140,7 +140,7 @@ chatRouter.post('/message-text', async (req, res) => {
     return res.status(400).json({ error: 'Personagem inválido.' });
   }
 
-  const state = conversations.get(parsed.data.conversationId) ?? { turns: 0, history: [] };
+  const state = (await conversations.get(parsed.data.conversationId)) ?? { turns: 0, history: [] };
   if (state.turns >= env.CHAT_MAX_TURNS) {
     return res.status(429).json({
       error: `Limite de ${env.CHAT_MAX_TURNS} trocas desta conversa atingido (trava de custo do protótipo).`,
@@ -168,7 +168,7 @@ type StreamCallbacks = {
 async function streamTurn(
   res: Response,
   conversationId: string,
-  state: ConvState,
+  state: ConversationState,
   run: (cb: StreamCallbacks) => Promise<TurnResult>,
 ) {
   res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
@@ -190,7 +190,7 @@ async function streamTurn(
       { role: 'user', content: result.userText },
       { role: 'assistant', content: result.replyText },
     );
-    conversations.set(conversationId, state);
+    await conversations.save(conversationId, state);
 
     send({ type: 'turns', turnsUsed: state.turns, turnsMax: env.CHAT_MAX_TURNS });
     res.end();
