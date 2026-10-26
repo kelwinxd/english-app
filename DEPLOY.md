@@ -16,15 +16,25 @@ Monorepo npm workspaces: `apps/api` (back), `apps/web` (front), `apps/worker`.
 
 ## Railway — publicar a API (`apps/api`)
 
-A Railway deve apontar para a pasta **`apps/api`** (Service → Settings → Root
-Directory = `apps/api`). O `apps/api/railway.json` já define build e start:
+**Passo obrigatório:** Service → Settings → **Root Directory = `apps/api`**.
+Sem isso a Railway builda pela raiz do repo, não acha o `start` (o
+`package.json` da raiz não tem) e falha com _"No start command detected"_.
 
-- Build: `npm install && npm run build` (roda `prisma generate` + `tsc`).
-- Start: `npm run start` (`node dist/index.js`).
+O build usa um **Dockerfile** (`apps/api/Dockerfile`) — determinístico, sem
+depender do auto-detect (Railpack/Nixpacks). O `apps/api/railway.json` já
+aponta o builder para o Dockerfile e o healthcheck:
+
+- Builder: `DOCKERFILE` (`apps/api/Dockerfile`).
+- O Dockerfile roda `npm install` + `npm run build` (`prisma generate` + `tsc`)
+  e sobe com `node dist/index.js`.
 - Healthcheck: `GET /health`.
 
 `apps/api/package.json` é autocontido (não depende de outros pacotes do
 workspace), então instala/builda isolado na subpasta sem problema.
+
+> Alternativa sem Dockerfile: builder Nixpacks/Railpack com Build Command
+> `npm install && npm run build` e Start Command `npm run start` — mas exige o
+> Root Directory em `apps/api`. O Dockerfile evita esse atrito.
 
 ### Variáveis de ambiente (Railway → Variables)
 
