@@ -26,3 +26,64 @@ model AppSetting {
 
   @@map("app_setting")
 }
+
+// ---------------------------------------------------------------------------
+// Chat — espelha o que hoje vive em memória (persistence/types.ts:
+// ConversationState = { turns, history: ChatMessage[] } e Correction[]).
+// Modelado e pronto para migrar; ainda NÃO está em uso (o adapter em memória
+// continua ativo até existir um PrismaConversationStore selecionado no
+// composition root persistence/index.ts).
+// ---------------------------------------------------------------------------
+
+/// Papel de quem enviou a mensagem (bate com ChatMessage.role).
+enum MessageRole {
+  user
+  assistant
+
+  @@map("message_role")
+}
+
+/// Uma conversa do chat. O id é o conversationId gerado no front (UUID).
+model Conversation {
+  id          String   @id
+  characterId String   @map("character_id")
+  turns       Int      @default(0) // trava de custo: trocas já usadas
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  messages Message[]
+
+  @@index([characterId])
+  @@map("conversation")
+}
+
+/// Cada fala (do usuário ou do personagem) dentro de uma conversa.
+model Message {
+  id             String      @id @default(uuid())
+  conversationId String      @map("conversation_id")
+  role           MessageRole
+  content        String      @db.Text
+  createdAt      DateTime    @default(now()) @map("created_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  corrections  Correction[]
+
+  @@index([conversationId, createdAt])
+  @@map("message")
+}
+
+/// Correção gramatical de uma mensagem do usuário (bate com o tipo Correction).
+model Correction {
+  id          String   @id @default(uuid())
+  messageId   String   @map("message_id")
+  original    String   @db.Text
+  corrected   String   @db.Text
+  type        String
+  explanation String   @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@map("correction")
+}
