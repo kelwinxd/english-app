@@ -8,8 +8,16 @@ import { useScenario } from '../useScenario';
 import { ScenarioSettings } from './ScenarioSettings';
 import { menuImage, type MenuItem, type Scenario } from '../data';
 
-export function ScenarioChat({ scenario, onExit }: { scenario: Scenario; onExit: () => void }) {
-  const s = useScenario(scenario);
+export function ScenarioChat({
+  scenario,
+  scope,
+  onExit,
+}: {
+  scenario: Scenario;
+  scope?: string;
+  onExit: () => void;
+}) {
+  const s = useScenario(scenario, scope);
   const [bgFailed, setBgFailed] = useState(false);
 
   return (
@@ -67,14 +75,16 @@ export function ScenarioChat({ scenario, onExit }: { scenario: Scenario; onExit:
         {/* Mensagens sobre a cena */}
         <MessageList entries={s.entries} stage={s.stage} />
 
-        {/* Alimentos — colados ao chat, parte da cena */}
-        <div className="shrink-0 px-2 pb-1 pt-1">
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {scenario.menu.map((item) => (
-              <MenuCard key={item.en} item={item} />
-            ))}
+        {/* Alimentos — colados ao chat, parte da cena (só quando há cardápio) */}
+        {scenario.menu.length > 0 && (
+          <div className="shrink-0 px-2 pb-1 pt-1">
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {scenario.menu.map((item) => (
+                <MenuCard key={item.en} item={item} />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Barra do cronômetro (só quando ligado) */}
         {s.timerEnabled && (

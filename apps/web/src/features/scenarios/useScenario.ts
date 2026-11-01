@@ -14,10 +14,18 @@ const TIMEOUT_LINES = [
   "Take your time... did you understand me? Is everything alright?",
 ];
 
-export function useScenario(scenario: Scenario) {
+export function useScenario(scenario: Scenario, scope?: string) {
+  // Escopo escolhido (ex.: área de trabalho) resolve a fala de abertura e o
+  // contexto enviado à IA. {scope} nos templates vira a opção escolhida.
+  const fill = (tpl: string) => tpl.replace(/\{scope\}/g, scope ?? '');
+  const openingLine =
+    scope && scenario.openingTemplate ? fill(scenario.openingTemplate) : scenario.openingLine;
+  const extraContext =
+    scope && scenario.contextTemplate ? fill(scenario.contextTemplate) : undefined;
+
   const [conversationId] = useState(() => crypto.randomUUID());
   const [entries, setEntries] = useState<Entry[]>(() => [
-    { role: 'ai', text: scenario.openingLine, audio: '' },
+    { role: 'ai', text: openingLine, audio: '' },
   ]);
   const [stage, setStage] = useState<Stage>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -72,6 +80,26 @@ export function useScenario(scenario: Scenario) {
   }
 
   useEffect(() => () => clearTick(), []);
+
+  // Abertura falada: lê a primeira fala em voz alta (TTS) ao entrar no cenário.
+  useEffect(() => {
+    if (!scenario.speakOpening || !openingLine) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { audio } = await speakText({ characterId: scenario.characterId, text: openingLine });
+        if (cancelled) return;
+        fillLastAiAudio(audio);
+        new Audio(audio).play().catch(() => {});
+      } catch {
+        /* sem áudio: fica só o texto */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Liga/desliga a contagem quando o jogador alterna o cronômetro.
   useEffect(() => {
@@ -143,7 +171,13 @@ export function useScenario(scenario: Scenario) {
     setStage('thinking');
     try {
       await sendMessageTextStream(
-        { text: trimmed, conversationId, characterId: scenario.characterId, correctGrammar },
+        {
+          text: trimmed,
+          conversationId,
+          characterId: scenario.characterId,
+          correctGrammar,
+          scenarioContext: extraContext,
+        },
         handleEvent,
       );
     } catch (e) {
@@ -161,7 +195,13 @@ export function useScenario(scenario: Scenario) {
     setStage('stt');
     try {
       await sendMessageStream(
-        { audio: blob, conversationId, characterId: scenario.characterId, correctGrammar },
+        {
+          audio: blob,
+          conversationId,
+          characterId: scenario.characterId,
+          correctGrammar,
+          scenarioContext: extraContext,
+        },
         handleEvent,
       );
     } catch (e) {

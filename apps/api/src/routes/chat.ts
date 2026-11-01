@@ -48,6 +48,8 @@ const bodySchema = z.object({
     .enum(['true', 'false'])
     .optional()
     .transform((v) => v !== 'false'),
+  // Escopo opcional do cenário (ex.: área de trabalho escolhida).
+  scenarioContext: z.string().trim().max(600).optional(),
 });
 
 chatRouter.post('/message', upload.single('audio'), async (req, res) => {
@@ -84,6 +86,7 @@ chatRouter.post('/message', upload.single('audio'), async (req, res) => {
       character,
       history: state.history,
       correctGrammar: parsed.data.correctGrammar,
+      extraContext: parsed.data.scenarioContext,
       ...cb,
     }),
   );
@@ -122,6 +125,7 @@ const textBodySchema = z.object({
   characterId: z.string().min(1),
   text: z.string().trim().min(1).max(2000),
   correctGrammar: z.boolean().optional().default(true),
+  scenarioContext: z.string().trim().max(600).optional(),
 });
 
 // Chat por TEXTO (JSON): mesma pipeline, sem Whisper.
@@ -153,6 +157,7 @@ chatRouter.post('/message-text', async (req, res) => {
       character,
       history: state.history,
       correctGrammar: parsed.data.correctGrammar,
+      extraContext: parsed.data.scenarioContext,
       ...cb,
     }),
   );

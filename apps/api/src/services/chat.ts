@@ -81,6 +81,9 @@ type TurnParams = {
   history: ChatMessage[];
   // Quando false, o personagem só conversa — sem corrigir gramática.
   correctGrammar?: boolean;
+  // Escopo dinâmico do cenário (ex.: área de trabalho escolhida). Entra no
+  // system prompt para direcionar o assunto sem criar um persona por tema.
+  extraContext?: string;
   // Callbacks por etapa: a rota emite eventos de streaming conforme cada parte fica pronta.
   onUserText?: (userText: string) => void | Promise<void>;
   onReply?: (replyText: string, corrections: Correction[]) => void | Promise<void>;
@@ -121,15 +124,19 @@ async function respond(userText: string, params: TurnParams): Promise<TurnResult
   const api = getOpenAI();
 
   const correctGrammar = params.correctGrammar ?? true;
+  const extra = params.extraContext?.trim();
+  const personaBlock = extra
+    ? `${params.character.persona}\n\nContext: ${extra}`
+    : params.character.persona;
   const systemPrompt = correctGrammar
-    ? `${params.character.persona}\n\n` +
+    ? `${personaBlock}\n\n` +
       'Also act as an English tutor. In "corrections", list concrete grammar/word-choice ' +
       "mistakes in the user's LAST message only. Keep corrections empty if the sentence was fine. " +
       'IMPORTANT: ignore punctuation entirely — never correct commas, periods or other ' +
       'punctuation, and never add a correction that only changes punctuation. ' +
       'Write each "explanation" in Brazilian Portuguese (pt-BR), short and clear. ' +
       '"type" is a short English slug like "verb_tense", "article", "preposition", "word_choice".'
-    : `${params.character.persona}\n\n` +
+    : `${personaBlock}\n\n` +
       'Just have a natural conversation. Do NOT correct the user. ' +
       'Always return an empty "corrections" array.';
 

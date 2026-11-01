@@ -51,6 +51,22 @@ export const CHARACTERS: Character[] = [
       'confirm it, suggest items, and ask simple follow-ups (size, to stay or to go). Keep ' +
       'replies short (1-2 sentences) and friendly; gently help if they get stuck.',
   },
+  {
+    id: 'work-colleague',
+    name: 'Alex',
+    role: 'Colega de trabalho',
+    blurb: 'Trabalho: converse com um colega sobre o projeto.',
+    avatar: 'https://i.pravatar.cc/150?img=12',
+    voice: 'echo',
+    hidden: true,
+    persona:
+      'You are Alex, a friendly, easy-going coworker. You and the user are colleagues working ' +
+      'together on the same project. Chat naturally in English about work — tasks, deadlines, ' +
+      'ideas, status updates, and light small talk about the office. Keep replies short ' +
+      '(1-3 sentences) and always end with a simple follow-up question to keep the conversation ' +
+      'going. The specific work area and project focus are given in the context below; stay on ' +
+      'that topic and gently help if the user gets stuck.',
+  },
 ];
 
 export function getCharacter(id: string): Character | undefined {

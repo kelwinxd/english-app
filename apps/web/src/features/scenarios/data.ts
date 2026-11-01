@@ -11,6 +11,9 @@ export type MenuItem = {
   file: string; // arquivo no Wikimedia Commons
 };
 
+/** Opção de um select que define o escopo da conversa (ex.: área de trabalho). */
+export type ScopeOption = { value: string; label: string };
+
 export type Scenario = {
   id: string;
   label: string;
@@ -23,6 +26,13 @@ export type Scenario = {
   background: string; // cena ao fundo (Wikimedia Commons)
   openingLine: string; // primeira fala do personagem (inglês)
   menu: MenuItem[];
+  // Cenários com escopo escolhido antes de começar (ex.: Trabalho → área).
+  // Os templates usam {scope} como placeholder da opção escolhida.
+  scopeOptions?: ScopeOption[];
+  scopeTitle?: string; // título do passo de seleção
+  openingTemplate?: string; // fala de abertura com {scope}
+  contextTemplate?: string; // escopo enviado à IA com {scope}
+  speakOpening?: boolean; // lê a fala de abertura em voz alta (TTS)
 };
 
 export function menuImage(file: string) {
@@ -67,14 +77,33 @@ export const SCENARIOS: Scenario[] = [
     id: 'work',
     label: 'Trabalho',
     emoji: '💼',
-    available: false,
-    characterId: '',
-    characterName: '',
-    avatar: '',
-    place: '',
-    background: '',
-    openingLine: '',
+    available: true,
+    characterId: 'work-colleague',
+    characterName: 'Alex',
+    avatar: 'https://i.pravatar.cc/150?img=12',
+    place: 'Escritório',
+    background: 'Coworking space.jpg',
+    openingLine: '', // gerado a partir da área escolhida (openingTemplate)
     menu: [],
+    scopeTitle: 'Em que área vocês trabalham?',
+    scopeOptions: [
+      { value: 'sales', label: 'Vendas' },
+      { value: 'marketing', label: 'Marketing' },
+      { value: 'IT', label: 'TI' },
+      { value: 'commercial', label: 'Comercial' },
+      { value: 'finance', label: 'Financeiro' },
+      { value: 'customer support', label: 'Atendimento' },
+      { value: 'human resources', label: 'RH' },
+      { value: 'operations', label: 'Operações' },
+    ],
+    openingTemplate:
+      "Hey! Good to see you. Ready to keep working on our {scope} project? " +
+      'I had a couple of ideas I wanted to run by you.',
+    contextTemplate:
+      'You and the user are coworkers working together on a {scope} project. ' +
+      'Keep the whole conversation about work in {scope}: tasks, deadlines, ideas, ' +
+      'the project status and office small talk. Use realistic {scope} vocabulary.',
+    speakOpening: true,
   },
   {
     id: 'college',

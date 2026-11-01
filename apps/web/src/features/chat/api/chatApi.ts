@@ -20,6 +20,7 @@ export function sendMessageStream(
     conversationId: string;
     characterId: string;
     correctGrammar: boolean;
+    scenarioContext?: string;
   },
   onEvent: (event: ChatStreamEvent) => void,
 ): Promise<void> {
@@ -28,6 +29,7 @@ export function sendMessageStream(
   form.append('conversationId', params.conversationId);
   form.append('characterId', params.characterId);
   form.append('correctGrammar', String(params.correctGrammar));
+  if (params.scenarioContext) form.append('scenarioContext', params.scenarioContext);
   return apiPostFormStream<ChatStreamEvent>('/chat/message', form, onEvent);
 }
 
@@ -38,6 +40,7 @@ export function sendMessageTextStream(
     conversationId: string;
     characterId: string;
     correctGrammar: boolean;
+    scenarioContext?: string;
   },
   onEvent: (event: ChatStreamEvent) => void,
 ): Promise<void> {
