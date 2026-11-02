@@ -14,5 +14,6 @@ export {
   type LearnProgress,
 } from './progress';
 export { TopicList } from './components/TopicList';
+export { CategoryPicker } from './components/CategoryPicker';
 export { Lesson } from './components/Lesson';
 export { Quiz } from './components/Quiz';
