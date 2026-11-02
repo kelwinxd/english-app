@@ -4,6 +4,18 @@
 
 export type Level = 'A2' | 'B1' | 'B2';
 
+// Categoria do tópico: tempo verbal (tense) ou ponto de gramática (grammar).
+export type Category = 'tense' | 'grammar';
+
+/** Rótulo e símbolo de cada categoria — usados nas seções do Aprender. */
+export const CATEGORY_META: Record<Category, { label: string; symbol: string }> = {
+  tense: { label: 'Tempos verbais', symbol: '⏳' },
+  grammar: { label: 'Gramática', symbol: '🔤' },
+};
+
+/** Ordem em que as seções aparecem. */
+export const CATEGORY_ORDER: Category[] = ['tense', 'grammar'];
+
 // Blocos de teoria (leitura). `k` é o tipo do bloco.
 export type Block =
   | { k: 'h'; text: string } // subtítulo
@@ -23,6 +35,7 @@ export type Question = {
 export type Topic = {
   id: string;
   level: Level;
+  category: Category;
   title: string;
   summary: string;
   content: Block[]; // teoria (leitura)
@@ -33,6 +46,7 @@ export const TOPICS: Topic[] = [
   {
     id: 'past-simple',
     level: 'A2',
+    category: 'tense',
     title: 'Past Simple',
     summary: 'Falar de ações terminadas no passado.',
     content: [
@@ -91,6 +105,7 @@ export const TOPICS: Topic[] = [
   {
     id: 'articles',
     level: 'A2',
+    category: 'grammar',
     title: 'Articles: a / an / the',
     summary: 'Quando usar a, an e the.',
     content: [
@@ -136,6 +151,7 @@ export const TOPICS: Topic[] = [
   {
     id: 'present-perfect',
     level: 'B1',
+    category: 'tense',
     title: 'Present Perfect',
     summary: 'Experiências e ações com ligação com o presente.',
     content: [
@@ -193,6 +209,7 @@ export const TOPICS: Topic[] = [
   {
     id: 'comparatives',
     level: 'B1',
+    category: 'grammar',
     title: 'Comparatives & Superlatives',
     summary: 'Comparar coisas (maior, o melhor…).',
     content: [
@@ -255,6 +272,71 @@ export const TOPICS: Topic[] = [
         options: ['more', 'most', 'much', 'the most'],
         answerIndex: 0,
         explanation: 'Adjetivo longo no comparativo → "more interesting than".',
+      },
+    ],
+  },
+  {
+    id: 'present-continuous',
+    level: 'A2',
+    category: 'tense',
+    title: 'Present Continuous',
+    summary: 'Ações acontecendo agora ou temporárias.',
+    content: [
+      { k: 'h', text: 'Forma: am / is / are + verbo-ing' },
+      {
+        k: 'table',
+        headers: ['Sujeito', 'Afirmativa', 'Negativa', 'Pergunta'],
+        rows: [
+          ['I', 'am working', "I'm not working", 'Am I working?'],
+          ['he / she / it', 'is working', "isn't working", 'Is he working?'],
+          ['you / we / they', 'are working', "aren't working", 'Are they working?'],
+        ],
+      },
+      { k: 'h', text: 'Quando usar' },
+      {
+        k: 'list',
+        items: [
+          'Ação acontecendo AGORA: "I am studying English right now".',
+          'Situação temporária (por estes dias): "She is living with her parents this month".',
+          'Planos/combinações futuras já marcadas: "We are meeting Ana tomorrow".',
+        ],
+      },
+      { k: 'ex', items: ['Look! The baby is sleeping.', "They aren't listening.", 'What are you doing?'] },
+      { k: 'h', text: 'Ortografia do -ing' },
+      {
+        k: 'list',
+        items: [
+          'Regra geral: + -ing (work → working, play → playing).',
+          'Termina em -e mudo: tira o -e (make → making, write → writing).',
+          'CVC em sílaba tônica curta: dobra a consoante (run → running, sit → sitting).',
+        ],
+      },
+      { k: 'tip', text: 'Verbos de estado (like, want, know, need, love) normalmente NÃO vão no contínuo. Diga "I want coffee" — não "I am wanting coffee".' },
+    ],
+    questions: [
+      {
+        prompt: 'Look! The baby ___ right now.',
+        options: ['sleep', 'sleeps', 'is sleeping', 'sleeping'],
+        answerIndex: 2,
+        explanation: 'Ação acontecendo agora → is + sleeping.',
+      },
+      {
+        prompt: 'They ___ TV at the moment.',
+        options: ['watch', 'are watching', 'watches', 'is watching'],
+        answerIndex: 1,
+        explanation: '"they" usa "are" + verbo-ing → "are watching".',
+      },
+      {
+        prompt: 'She ___ today — she is sick.',
+        options: ["isn't working", "aren't working", "doesn't working", 'not working'],
+        answerIndex: 0,
+        explanation: 'Negativa com "she": is + not → "isn\'t working".',
+      },
+      {
+        prompt: '___ you studying for the test?',
+        options: ['Do', 'Is', 'Are', 'Does'],
+        answerIndex: 2,
+        explanation: 'Pergunta no contínuo com "you" → "Are you studying?".',
       },
     ],
   },

@@ -6,7 +6,7 @@ import { MessageList } from '@/features/chat/components/MessageList';
 import { RecorderControls } from '@/features/chat/components/RecorderControls';
 import { useScenario } from '../useScenario';
 import { ScenarioSettings } from './ScenarioSettings';
-import { menuImage, type MenuItem, type Scenario } from '../data';
+import { menuImage, scenarioBackground, type MenuItem, type Scenario } from '../data';
 
 export function ScenarioChat({
   scenario,
@@ -19,13 +19,14 @@ export function ScenarioChat({
 }) {
   const s = useScenario(scenario, scope);
   const [bgFailed, setBgFailed] = useState(false);
+  const background = scenarioBackground(scenario, scope); // cena certa por escopo
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border">
-      {/* Cena de fundo (garçonete/lanchonete) */}
-      {scenario.background && !bgFailed ? (
+      {/* Cena de fundo (muda conforme o cenário/área escolhida) */}
+      {background && !bgFailed ? (
         <img
-          src={menuImage(scenario.background)}
+          src={menuImage(background, 600)}
           alt=""
           onError={() => setBgFailed(true)}
           className="absolute inset-0 h-full w-full object-cover"

@@ -1,4 +1,11 @@
-export { TOPICS, type Topic, type Level } from './data';
+export {
+  TOPICS,
+  CATEGORY_META,
+  CATEGORY_ORDER,
+  type Topic,
+  type Level,
+  type Category,
+} from './data';
 export {
   getProgress,
   saveBest,

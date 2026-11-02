@@ -33,10 +33,19 @@ export type Scenario = {
   openingTemplate?: string; // fala de abertura com {scope}
   contextTemplate?: string; // escopo enviado à IA com {scope}
   speakOpening?: boolean; // lê a fala de abertura em voz alta (TTS)
+  // Fundo específico por escopo (ex.: cada área de trabalho tem sua cena).
+  // Cai no `background` padrão quando a área não estiver no mapa.
+  scopeBackgrounds?: Record<string, string>;
 };
 
-export function menuImage(file: string) {
-  return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(file)}?width=200`;
+/** Fundo efetivo do cenário, considerando o escopo escolhido. */
+export function scenarioBackground(scenario: Scenario, scope?: string): string {
+  if (scope && scenario.scopeBackgrounds?.[scope]) return scenario.scopeBackgrounds[scope];
+  return scenario.background;
+}
+
+export function menuImage(file: string, width = 200) {
+  return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(file)}?width=${width}`;
 }
 
 export const SCENARIOS: Scenario[] = [
@@ -104,6 +113,18 @@ export const SCENARIOS: Scenario[] = [
       'Keep the whole conversation about work in {scope}: tasks, deadlines, ideas, ' +
       'the project status and office small talk. Use realistic {scope} vocabulary.',
     speakOpening: true,
+    // Cena certa por profissão (Wikimedia Commons). Áreas fora do mapa usam o
+    // fundo padrão (coworking).
+    scopeBackgrounds: {
+      sales: 'Provision Shop Riangdo South West Khasi Oct24 A7CR 04231.jpg',
+      marketing:
+        'Vialiki Voz Conference 2025 Pärnumaa Presentation at the conference (BW photo).jpg',
+      IT: 'Software Developer at Work.jpg',
+      commercial: 'Meeting.jpg',
+      'customer support': 'Call Center Agent.jpg',
+      'human resources': 'Job interview.jpg',
+      operations: 'Worker installs a glass panel in a warehouse.jpg',
+    },
   },
   {
     id: 'college',
