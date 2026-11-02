@@ -37,6 +37,7 @@ export function ImageGame({ onFinish, onExit }: GameComponentProps) {
   const [remaining, setRemaining] = useState(5000);
   const [typed, setTyped] = useState('');
   const [note, setNote] = useState<string | null>(null);
+  const [revealed, setRevealed] = useState(false); // tempo esgotou: mostra a resposta
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [hitsMap, setHitsMap] = useState<Record<string, number>>({});
@@ -67,11 +68,27 @@ export function ImageGame({ onFinish, onExit }: GameComponentProps) {
       const left = deadline - Date.now();
       if (left <= 0) {
         setRemaining(0);
-        finish('tempo esgotado');
+        reveal();
       } else {
         setRemaining(left);
       }
     }, 100);
+  }
+
+  // Tempo esgotado: revela a resposta certa e espera a pessoa seguir.
+  function reveal() {
+    clearTick();
+    setNote(null);
+    setRevealed(true);
+  }
+
+  // Próxima imagem após a revelação (ou encerra, se era a última).
+  function nextAfterReveal() {
+    if (idx + 1 >= queue.length) {
+      finish('você terminou o tema!');
+    } else {
+      advance();
+    }
   }
 
   function finish(reason: string, finalScore = scoreRef.current) {
@@ -93,6 +110,7 @@ export function ImageGame({ onFinish, onExit }: GameComponentProps) {
     setScore(0);
     setTyped('');
     setNote(null);
+    setRevealed(false);
     setImgLoaded(false);
     setImgError(false);
     setPhase('playing'); // o timer começa quando a imagem carrega
@@ -101,6 +119,8 @@ export function ImageGame({ onFinish, onExit }: GameComponentProps) {
   function advance() {
     clearTick();
     setTyped('');
+    setNote(null);
+    setRevealed(false);
     setImgLoaded(false);
     setImgError(false);
     setIdx((i) => i + 1);
@@ -108,7 +128,7 @@ export function ImageGame({ onFinish, onExit }: GameComponentProps) {
 
   function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (phase !== 'playing' || !current || !imgLoaded) return;
+    if (phase !== 'playing' || !current || !imgLoaded || revealed) return;
     const value = typed.trim();
     if (!value) return;
 
@@ -292,31 +312,52 @@ export function ImageGame({ onFinish, onExit }: GameComponentProps) {
         {imgLoaded ? `${(remaining / 1000).toFixed(1)}s` : 'carregando imagem…'}
       </p>
 
-      {note && <p className="mb-1 text-center text-sm text-muted-foreground">{note}</p>}
+      {note && !revealed && (
+        <p className="mb-1 text-center text-sm text-muted-foreground">{note}</p>
+      )}
 
-      {/* Entrada por texto */}
-      <form onSubmit={submit} className="flex gap-2 pt-1">
-        <input
-          type="text"
-          value={typed}
-          onChange={(e) => setTyped(e.target.value)}
-          placeholder={mode === 'objects' ? 'Nome do objeto em inglês…' : 'Ação em inglês…'}
-          disabled={!imgLoaded}
-          autoComplete="off"
-          maxLength={80}
-          ref={inputRef}
-          className="min-w-0 flex-1 rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
-        />
-        <button
-          type="submit"
-          disabled={!imgLoaded || !typed.trim()}
-          aria-label="Enviar resposta"
-          className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50"
-        >
-          <Send className="h-4 w-4" />
-          <span>Enviar</span>
-        </button>
-      </form>
+      {revealed && current ? (
+        /* Errou / tempo esgotado: mostra a resposta certa e segue */
+        <div className="pt-1">
+          <div className="mb-3 rounded-xl border border-amber-300/60 bg-amber-50 px-3 py-2 text-center text-sm dark:bg-amber-950/30">
+            <span className="text-muted-foreground">A resposta era: </span>
+            <span className="font-semibold text-amber-700 dark:text-amber-400">
+              {current.accepted[0]}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={nextAfterReveal}
+            className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+          >
+            {idx + 1 >= queue.length ? 'Ver resultado' : 'Próxima'}
+          </button>
+        </div>
+      ) : (
+        /* Entrada por texto */
+        <form onSubmit={submit} className="flex gap-2 pt-1">
+          <input
+            type="text"
+            value={typed}
+            onChange={(e) => setTyped(e.target.value)}
+            placeholder={mode === 'objects' ? 'Nome do objeto em inglês…' : 'Ação em inglês…'}
+            disabled={!imgLoaded}
+            autoComplete="off"
+            maxLength={80}
+            ref={inputRef}
+            className="min-w-0 flex-1 rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+          />
+          <button
+            type="submit"
+            disabled={!imgLoaded || !typed.trim()}
+            aria-label="Enviar resposta"
+            className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50"
+          >
+            <Send className="h-4 w-4" />
+            <span>Enviar</span>
+          </button>
+        </form>
+      )}
     </div>
   );
 }
