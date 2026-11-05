@@ -35,11 +35,13 @@ export function WordsChoose({
   const tickRef = useRef<number | null>(null);
   const lastThemeRef = useRef<string[]>([]); // palavras do tema da rodada anterior
 
-  // Distratores: palavras dos OUTROS temas (sem repetir as do tema atual).
+  // Distratores: palavras dos OUTROS temas, exceto os temas "vizinhos" (avoid),
+  // que se confundem com o atual — assim a palavra certa fica clara.
   const otherWords = useMemo(() => {
     const themeSet = new Set(theme.words.map((w) => w.en));
+    const avoid = new Set(theme.avoid ?? []);
     const seen = new Set<string>();
-    return THEME_WORDS.filter((t) => t.label !== theme.label)
+    return THEME_WORDS.filter((t) => t.label !== theme.label && !avoid.has(t.label))
       .flatMap((t) => t.words)
       .filter((w) => !themeSet.has(w.en) && !seen.has(w.en) && seen.add(w.en));
   }, [theme]);

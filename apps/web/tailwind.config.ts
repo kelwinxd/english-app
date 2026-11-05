@@ -4,6 +4,10 @@ import animate from 'tailwindcss-animate';
 export default {
   darkMode: ['class'],
   content: ['./index.html', './src/**/*.{ts,tsx}'],
+  // No touch, o `:hover` fica "grudado" após o toque (o card parece selecionado
+  // no próximo round). Isto restringe todo `hover:` a dispositivos que realmente
+  // têm hover (@media (hover: hover)).
+  future: { hoverOnlyWhenSupported: true },
   theme: {
     container: {
       center: true,

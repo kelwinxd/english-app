@@ -8,6 +8,9 @@ export type WordTheme = {
   label: string;
   en: string; // descrição do tema (para a checagem da IA no free style)
   words: ThemeWord[];
+  // Temas "vizinhos" que se confundem com este — NÃO usar como distratores no
+  // Words choose, para a palavra certa ficar clara (ex.: Viagem x Natureza).
+  avoid?: string[];
 };
 
 export const THEME_WORDS: WordTheme[] = [
@@ -70,6 +73,7 @@ export const THEME_WORDS: WordTheme[] = [
   {
     label: 'Tecnologia',
     en: 'technology',
+    avoid: ['Trabalho'],
     words: [
       { en: 'computer', pt: 'computador' },
       { en: 'laptop', pt: 'notebook' },
@@ -126,6 +130,7 @@ export const THEME_WORDS: WordTheme[] = [
   {
     label: 'Trabalho',
     en: 'work and office',
+    avoid: ['Tecnologia', 'Esportes'],
     words: [
       { en: 'job', pt: 'emprego' },
       { en: 'office', pt: 'escritório' },
@@ -182,6 +187,10 @@ export const THEME_WORDS: WordTheme[] = [
   {
     label: 'Viagem',
     en: 'travel',
+    avoid: ['Natureza'],
+    // Foco em logística de viagem (aeroporto, documentos, transporte,
+    // hospedagem). Palavras genéricas demais (city, country, room, key, map,
+    // guide, mountain, road, bridge) foram removidas para a resposta ficar clara.
     words: [
       { en: 'airport', pt: 'aeroporto' },
       { en: 'airplane', pt: 'avião' },
@@ -192,18 +201,12 @@ export const THEME_WORDS: WordTheme[] = [
       { en: 'backpack', pt: 'mochila' },
       { en: 'hotel', pt: 'hotel' },
       { en: 'reservation', pt: 'reserva' },
-      { en: 'map', pt: 'mapa' },
       { en: 'tourist', pt: 'turista' },
-      { en: 'guide', pt: 'guia' },
-      { en: 'beach', pt: 'praia' },
-      { en: 'mountain', pt: 'montanha' },
-      { en: 'city', pt: 'cidade' },
-      { en: 'country', pt: 'país' },
       { en: 'border', pt: 'fronteira' },
       { en: 'customs', pt: 'alfândega' },
       { en: 'visa', pt: 'visto' },
       { en: 'flight', pt: 'voo' },
-      { en: 'gate', pt: 'portão' },
+      { en: 'gate', pt: 'portão de embarque' },
       { en: 'boarding', pt: 'embarque' },
       { en: 'departure', pt: 'partida' },
       { en: 'arrival', pt: 'chegada' },
@@ -213,12 +216,8 @@ export const THEME_WORDS: WordTheme[] = [
       { en: 'train', pt: 'trem' },
       { en: 'station', pt: 'estação' },
       { en: 'subway', pt: 'metrô' },
-      { en: 'road', pt: 'estrada' },
       { en: 'highway', pt: 'rodovia' },
-      { en: 'bridge', pt: 'ponte' },
       { en: 'hostel', pt: 'hostel' },
-      { en: 'room', pt: 'quarto' },
-      { en: 'key', pt: 'chave' },
       { en: 'currency', pt: 'moeda' },
       { en: 'exchange', pt: 'câmbio' },
       { en: 'souvenir', pt: 'lembrança' },
@@ -238,6 +237,7 @@ export const THEME_WORDS: WordTheme[] = [
   {
     label: 'Esportes',
     en: 'sports',
+    avoid: ['Trabalho', 'Natureza'],
     words: [
       { en: 'soccer', pt: 'futebol' },
       { en: 'basketball', pt: 'basquete' },
@@ -294,6 +294,7 @@ export const THEME_WORDS: WordTheme[] = [
   {
     label: 'Natureza',
     en: 'nature',
+    avoid: ['Viagem', 'Esportes'],
     words: [
       { en: 'tree', pt: 'árvore' },
       { en: 'flower', pt: 'flor' },
